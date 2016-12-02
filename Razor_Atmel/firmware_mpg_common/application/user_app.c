@@ -149,6 +149,7 @@ static void UserAppSM_Idle(void)
   static bool bStarted = FALSE;
   static bool bShipsSet = FALSE;
   static u8 u8ShipCount = 0;
+  static u8 au8ShipPositions[5];
   
   if(WasButtonPressed(BUTTON0) && bStarted == FALSE)
   {
@@ -195,6 +196,7 @@ static void UserAppSM_Idle(void)
     if(WasButtonPressed(BUTTON3) && bStarted == TRUE && bShipsSet == FALSE)
     {
       ButtonAcknowledge(BUTTON3);
+      au8ShipPositions[u8ShipCount] = u8CursorPosition;
       
       LCDMessage(u8CursorPosition, au8Ship);
       u8ShipCount++;

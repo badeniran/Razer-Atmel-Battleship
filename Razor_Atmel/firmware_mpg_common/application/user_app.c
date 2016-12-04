@@ -166,38 +166,27 @@ static void UserAppSM_Idle(void)
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
       /* We got some data: parse it into au8DataContent */
-   for(u8 i = 0; i < ANT_DATA_BYTES; i++)
-   {
-     au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16)
-     au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
-   }
-   
-      LCDMessage(LINE2_START_ADDR, au8DataContent);
-    }
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
-    {
-     /* A channel period has gone by: typically this is when new data should be queued to be sent */
-    }
-  } /* end AntReadData() */
-  
-  else if(G_eAntApiCurrentMessageClass == ANT_TICK){
-    /* Update and queue the new message data */
-      au8TestMessage[7]++;
-      
-      if(au8TestMessage[7] == 0)
+      /*for(u8 i = 0; i < ANT_DATA_BYTES; i++)
       {
-        au8TestMessage[6]++;
-        
-        if(au8TestMessage[6] == 0)
-        {
-          au8TestMessage[5]++;
-        }
+        au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
+        au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
+      }*/
+      
+      if(G_au8AntApiCurrentData[0] == 0xff) {
+        au8DataContent[0] = 1;
+        LCDMessage(LINE2_START_ADDR, au8DataContent);
       }
-      AntQueueBroadcastMessage(au8TestMessage);
-      
-      
-      
+    }
   }
+  
+    else if(G_eAntApiCurrentMessageClass == ANT_TICK){
+      /* Update and queue the new message data */
+      if(IsButtonPressed(BUTTON0)) {
+        ButtonAcknowledge(BUTTON0);
+        au8TestMessage[0] = 0xff;
+        AntQueueBroadcastMessage(au8TestMessage);
+      }
+    }
       
        /* Check all the buttons and update au8TestMessage according to the button state */ 
   au8TestMessage[0] = 0x00;

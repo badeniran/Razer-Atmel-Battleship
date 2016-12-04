@@ -231,6 +231,7 @@ static void UserAppSM_WaitChannelOpen(void)
   }
 } /* end UserAppSM_WaitChannelOpen() */
 
+
   static void UserAppSM_ChannelOpen(void) {
     static u8 u8LastState = 0xff;
     static u8 au8TickMessage[] = "EVENT x\n\r";  /* "x" at index [6] will be replaced by the current code */
@@ -238,24 +239,6 @@ static void UserAppSM_WaitChannelOpen(void)
     static u8 au8LastAntData[ANT_APPLICATION_MESSAGE_BYTES] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
     static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
     bool bGotNewData;
-    
-    /* Check for BUTTON0 to close channel */
-  if(WasButtonPressed(BUTTON0))
-  {
-    /* Got the button, so complete one-time actions before next state */
-    ButtonAcknowledge(BUTTON0);
-    
-    /* Queue close channel, initialize the u8LastState variable and change LED to blinking green to indicate channel is closing */
-    AntCloseChannel();
-    u8LastState = 0xff;
-    LedOff(YELLOW);
-    LedOff(BLUE);
-    LedBlink(GREEN, LED_2HZ);
-    
-    /* Set timer and advance states */
-    UserApp_u32Timeout = G_u32SystemTime1ms;
-    UserApp_StateMachine = UserAppSM_WaitChannelClose;
-  } /* end if(WasButtonPressed(BUTTON0)) */
   
   /* A slave channel can close on its own, so explicitly check channel status */
   if(AntRadioStatus() != ANT_OPEN)
@@ -274,14 +257,14 @@ static void UserAppSM_WaitChannelOpen(void)
      /* New data message: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
-      UserApp_u32DataMsgCount++;
+       for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+   {
+     au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
+     au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
+   }
+   
+   LCDMessage(LINE2_START_ADDR, au8DataContent);
     } /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
-
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK)
-    {
-      UserApp_u32TickMsgCount++;
-    } /* end else if(G_eAntApiCurrentMessageClass == ANT_TICK) */
-  } /* end AntReadData() */
   
       else if(G_eAntApiCurrentMessageClass == ANT_TICK)
     {
@@ -336,72 +319,16 @@ static void UserAppSM_WaitChannelOpen(void)
           }
         } /* end switch (G_au8AntApiCurrentData) */
       } /* end if (u8LastState ...) */
-    } /* end else if(G_eAntApiCurrentMessageClass == ANT_TICK) */
-  
-  if(G_eAntApiCurrentMessageClass == ANT_DATA)
-    {
-      UserApp_u32DataMsgCount++;
       
-      /* Check if the new data is the same as the old data and update as we go */
-      bGotNewData = FALSE;
-      for(u8 i = 0; i < ANT_APPLICATION_MESSAGE_BYTES; i++)
-      {
-        if(G_au8AntApiCurrentData[i] != au8LastAntData[i])
-        {
-          bGotNewData = TRUE;
-          au8LastAntData[i] = G_au8AntApiCurrentData[i];
-
-          au8DataContent[2 * i] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
-          au8DataContent[2*i+1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16); 
-        }
-      }
-      
-      if(bGotNewData)
-      {
-        /* We got new data: show on LCD */
-        LCDClearChars(LINE2_START_ADDR, 20); 
-        LCDMessage(LINE2_START_ADDR, au8DataContent); 
-
-
-        /* Update our local message counter and send the message back */
-        au8TestMessage[7]++;
-        if(au8TestMessage[7] == 0)
-        {
-          au8TestMessage[6]++;
-          if(au8TestMessage[6] == 0)
-          {
-            au8TestMessage[5]++;
-          }
-        }
+      if(WasButtonPressed(BUTTON0)) {
+        ButtonAcknowledge(BUTTON0);
+        au8TickMessage[0] = 0xff;
         AntQueueBroadcastMessage(au8TestMessage);
+      }
+    } /* end else if(G_eAntApiCurrentMessageClass == ANT_TICK) */
 
-        /* Check for a special packet and respond */
-        if(G_au8AntApiCurrentData[0] == 0xA5)
-        {
-          LedOff(LCD_RED);
-          LedOff(LCD_GREEN);
-          LedOff(LCD_BLUE);
-          
-          if(G_au8AntApiCurrentData[1] == 1)
-          {
-            LedOn(LCD_RED);
-          }
-          
-          if(G_au8AntApiCurrentData[2] == 1)
-          {
-            LedOn(LCD_GREEN);
-          }
-
-          if(G_au8AntApiCurrentData[3] == 1)
-          {
-            LedOn(LCD_BLUE);
-          }
-        }
-
-      } /* end if(bGotNewData) */
-    } /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
-
- }
+    }
+  }
      
 #if 1
 /*-------------------------------------------------------------------------------------------------------------------*/

@@ -68,6 +68,8 @@ Variable names shall start with "UserApp_" and be declared as static.
 static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
 
+static u8 u8CursorPosition = LINE2_START_ADDR;
+
 
 /**********************************************************************************************************************
 Function Definitions
@@ -96,6 +98,14 @@ Promises:
 */
 void UserAppInitialize(void)
 {
+  
+  static u8 au8Line1Start[] = "Push Button0"; 
+  static u8 au8Line2Start[] = "To Start";
+
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR + 4, au8Line1Start);
+  LCDMessage(LINE2_START_ADDR + 6, au8Line2Start);
+  
    /* Configure ANT for this application */
   G_stAntSetupData.AntChannel          = ANT_CHANNEL_USERAPP;
   G_stAntSetupData.AntSerialLo         = ANT_SERIAL_LO_USERAPP;
@@ -156,6 +166,85 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {
+  /**********
+  PLACING SHIPS
+  ***********/
+  static u8 au8OppSea[] = "^^^^^^^^^^^^^^^^^^^^";
+  static u8 au8Ship[] = "#";
+  static bool bStarted = FALSE;
+  static bool bShipsSet = FALSE;
+  static u8 u8ShipCount = 0;
+  
+  if(WasButtonPressed(BUTTON0) && bStarted == FALSE)
+  {
+    ButtonAcknowledge(BUTTON0);
+    bStarted = TRUE;
+    
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, au8OppSea);   
+    LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
+    LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR);
+  }
+  
+  if(WasButtonPressed(BUTTON1) && bStarted == TRUE && bShipsSet == FALSE)
+    {
+      ButtonAcknowledge(BUTTON1);
+      
+      if(u8CursorPosition == LINE2_START_ADDR)
+      {
+        u8CursorPosition = LINE2_END_ADDR;
+      }
+      else 
+      {
+        u8CursorPosition--;
+      }
+      
+      LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
+    }
+    
+    if(WasButtonPressed(BUTTON2) && bStarted == TRUE && bShipsSet == FALSE)
+    {
+      ButtonAcknowledge(BUTTON2);
+      
+       if(u8CursorPosition == LINE2_END_ADDR)
+      {
+        u8CursorPosition = LINE2_START_ADDR;
+      }
+      else 
+      {
+        u8CursorPosition++;
+      }
+      
+      LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
+    }
+    
+    if(WasButtonPressed(BUTTON3) && bStarted == TRUE && bShipsSet == FALSE)
+    {
+      ButtonAcknowledge(BUTTON3);
+      
+      LCDMessage(u8CursorPosition, au8Ship);
+      u8ShipCount++;
+      if(u8CursorPosition == LINE2_END_ADDR)
+      {
+        u8CursorPosition = LINE2_START_ADDR;
+      }
+      else 
+      {
+        u8CursorPosition++;
+      }
+      
+      LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
+      
+      if(u8ShipCount == MAX_SHIPS)
+      {
+        bShipsSet = TRUE;
+        LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
+      }
+    }
+  
+  /**************
+  ANT initialization
+  **************/
   
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
   u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
@@ -166,16 +255,12 @@ static void UserAppSM_Idle(void)
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
       /* We got some data: parse it into au8DataContent */
-      /*for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
       {
         au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
         au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
-      }*/
-      
-      if(G_au8AntApiCurrentData[0] == 0xff) {
-        au8DataContent[0] = 1;
-        LCDMessage(LINE2_START_ADDR, au8DataContent);
       }
+      LCDMessage(LINE2_START_ADDR, au8DataContent);
     }
   }
   
@@ -187,13 +272,6 @@ static void UserAppSM_Idle(void)
         AntQueueBroadcastMessage(au8TestMessage);
       }
     }
-      
-       /* Check all the buttons and update au8TestMessage according to the button state */ 
-  au8TestMessage[0] = 0x00;
-  if( IsButtonPressed(BUTTON0) )
-  {
-    au8TestMessage[0] = 0xff;
-  }
   
     
   

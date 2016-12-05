@@ -106,7 +106,10 @@ void UserAppInitialize(void)
   LCDMessage(LINE1_START_ADDR + 4, au8Line1Start);
   LCDMessage(LINE2_START_ADDR + 6, au8Line2Start);
   
+  
+  
    /* Configure ANT for this application */
+    
   G_stAntSetupData.AntChannel          = ANT_CHANNEL_USERAPP;
   G_stAntSetupData.AntSerialLo         = ANT_SERIAL_LO_USERAPP;
   G_stAntSetupData.AntSerialHi         = ANT_SERIAL_HI_USERAPP;
@@ -128,6 +131,7 @@ void UserAppInitialize(void)
     /* The task isn't properly initialized, so shut it down and don't run */
     UserApp_StateMachine = UserAppSM_FailedInit;
   }
+ 
 
 } /* end UserAppInitialize() */
 
@@ -166,10 +170,77 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserAppSM_Idle(void)
 {
-  /**********
-  PLACING SHIPS
-  ***********/
+  bool bShipsReady = FALSE;
   static u8 au8OppSea[] = "^^^^^^^^^^^^^^^^^^^^";
+  static u8 au8PlaySea[] = "^^^^^^^^^^^^^^^^^^^^";
+  
+  if(!bShipsReady) {
+    bShipsReady = SetupShips(au8PlaySea, au8OppSea);
+  }
+  
+  if(AntRadioStatus() == ANT_OPEN)
+  {
+    LedOff(YELLOW);
+    LedOn(GREEN);
+    //UserApp_StateMachine = UserAppSM_ChannelOpen;
+  }
+   else {
+     LedOff(GREEN);
+     LedBlink(YELLOW, LED_2HZ);
+   }
+  
+  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+  u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
+  
+  if( AntReadData())
+  {
+     /* New data message: check what it is */
+    if(G_eAntApiCurrentMessageClass == ANT_DATA)
+    {
+      /* We got some data: parse it into au8DataContent */
+      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
+      {
+        au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
+        au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
+      }
+      LCDMessage(LINE2_START_ADDR, au8DataContent);
+    }
+  }
+  
+    else if(G_eAntApiCurrentMessageClass == ANT_TICK){
+      /* Update and queue the new message data */
+      if(IsButtonPressed(BUTTON0)) {
+        ButtonAcknowledge(BUTTON0);
+        //au8TestMessage[0] = 0xff;
+        //AntQueueBroadcastMessage(au8TestMessage);
+      }
+    }
+  
+    
+  
+} /* end UserAppSM_Idle() */
+     
+#if 0
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* Handle an error */
+static void UserAppSM_Error(void)          
+{
+  
+} /* end UserAppSM_Error() */
+#endif
+
+
+/*-------------------------------------------------------------------------------------------------------------------*/
+/* State to sit in if init failed */
+static void UserAppSM_FailedInit(void)          
+{
+    
+} /* end UserAppSM_FailedInit() */
+
+
+/*--------------------------------------------------------------------------------------------------------------------*/
+/* Setting up ships */
+bool SetupShips(u8 * au8PlaySea, u8 * au8OppSea) {
   static u8 au8Ship[] = "#";
   static bool bStarted = FALSE;
   static bool bShipsSet = FALSE;
@@ -224,6 +295,8 @@ static void UserAppSM_Idle(void)
       
       LCDMessage(u8CursorPosition, au8Ship);
       u8ShipCount++;
+      au8PlaySea[u8CursorPosition] = '#';
+      
       if(u8CursorPosition == LINE2_END_ADDR)
       {
         u8CursorPosition = LINE2_START_ADDR;
@@ -239,60 +312,11 @@ static void UserAppSM_Idle(void)
       {
         bShipsSet = TRUE;
         LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
+        return TRUE;
       }
     }
-  
-  /**************
-  ANT initialization
-  **************/
-  
-  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
-  u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
-  
-  if( AntReadData() )
-  {
-     /* New data message: check what it is */
-    if(G_eAntApiCurrentMessageClass == ANT_DATA)
-    {
-      /* We got some data: parse it into au8DataContent */
-      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
-      {
-        au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
-        au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
-      }
-      LCDMessage(LINE2_START_ADDR, au8DataContent);
-    }
-  }
-  
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK){
-      /* Update and queue the new message data */
-      if(IsButtonPressed(BUTTON0)) {
-        ButtonAcknowledge(BUTTON0);
-        au8TestMessage[0] = 0xff;
-        AntQueueBroadcastMessage(au8TestMessage);
-      }
-    }
-  
-    
-  
-} /* end UserAppSM_Idle() */
-     
-#if 0
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* Handle an error */
-static void UserAppSM_Error(void)          
-{
-  
-} /* end UserAppSM_Error() */
-#endif
-
-
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* State to sit in if init failed */
-static void UserAppSM_FailedInit(void)          
-{
-    
-} /* end UserAppSM_FailedInit() */
+  return FALSE;
+}
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/

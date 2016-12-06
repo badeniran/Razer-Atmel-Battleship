@@ -38,7 +38,6 @@ Constants / Definitions
 #define ANT_CHANNEL_PERIOD_HI_USERAPP   (u8)0x20              // High byte of two-byte channel period 
 #define ANT_FREQUENCY_USERAPP           (u8)50                // 2400MHz + this number 0 - 99 MHz
 #define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_0DBM   // RADIO_TX_POWER_0DBM, RADIO_TX_POWER_MINUS5DBM, RADIO_TX_POWER_MINUS10DBM, RADIO_TX_POWER_MINUS20DBM
-#define MAX_SHIPS 5
 
 /**********************************************************************************************************************
 Function Declarations
@@ -47,7 +46,6 @@ Function Declarations
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Public functions                                                                                                   */
 /*--------------------------------------------------------------------------------------------------------------------*/
-bool SetupShips(u8 * au8PlaySea, u8 * u8OppSea);
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
@@ -59,7 +57,7 @@ void UserAppRunActiveState(void);
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+static void UserApp_CheckCurrentState(u8 *u8CurrentState);
 
 /***********************************************************************************************************************
 State Machine Declarations

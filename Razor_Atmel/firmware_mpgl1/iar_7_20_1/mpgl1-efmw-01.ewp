@@ -1952,6 +1952,9 @@
         <name>$PROJ_DIR$\..\..\firmware_mpg_common\drivers\antmessage.h</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\application\BattleShips.h</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\..\firmware_mpg_common\drivers\buttons.h</name>
       </file>
       <file>
@@ -1995,6 +1998,9 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\firmware_mpg_common\drivers\ant_api.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\application\BattleShips.c</name>
       </file>
       <file>
         <name>$PROJ_DIR$\..\..\firmware_mpg_common\drivers\buttons.c</name>

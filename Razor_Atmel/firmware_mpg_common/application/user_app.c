@@ -68,8 +68,6 @@ Variable names shall start with "UserApp_" and be declared as static.
 static fnCode_type UserApp_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp_u32Timeout;                      /* Timeout counter used across states */
 
-static u8 u8CursorPosition = LINE2_START_ADDR;
-
 
 /**********************************************************************************************************************
 Function Definitions
@@ -105,7 +103,6 @@ void UserAppInitialize(void)
   LCDCommand(LCD_CLEAR_CMD);
   LCDMessage(LINE1_START_ADDR + 4, au8Line1Start);
   LCDMessage(LINE2_START_ADDR + 6, au8Line2Start);
-  
   
   
    /* Configure ANT for this application */
@@ -175,39 +172,30 @@ static void UserAppSM_Idle(void)
   static u8 au8PlaySea[] = "^^^^^^^^^^^^^^^^^^^^";
   
   if(!bShipsReady) {
-    bShipsReady = SetupShips(au8PlaySea, au8OppSea);
+    bShipsReady = BattleShips_SetupShips(au8PlaySea, au8OppSea);
+  }
+  else {
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, au8OppSea);
+    LCDMessage(LINE2_START_ADDR, au8PlaySea);
   }
   
-  if(AntRadioStatus() == ANT_OPEN)
-  {
-    LedOff(YELLOW);
-    LedOn(GREEN);
-    //UserApp_StateMachine = UserAppSM_ChannelOpen;
-  }
-   else {
-     LedOff(GREEN);
-     LedBlink(YELLOW, LED_2HZ);
-   }
-  
-  static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
-  u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
+  //static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
+  //u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
   
   if( AntReadData())
   {
      /* New data message: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
-      /* We got some data: parse it into au8DataContent */
-      for(u8 i = 0; i < ANT_DATA_BYTES; i++)
-      {
-        au8DataContent[2 * i]     = HexToASCIICharUpper(G_au8AntApiCurrentData[i] / 16);
-        au8DataContent[2 * i + 1] = HexToASCIICharUpper(G_au8AntApiCurrentData[i] % 16);
-      }
-      LCDMessage(LINE2_START_ADDR, au8DataContent);
+      /* We got some data: check for current state */
     }
   }
   
-    else if(G_eAntApiCurrentMessageClass == ANT_TICK){
+   else if(G_eAntApiCurrentMessageClass == ANT_TICK){
+      
+      //UserApp_CheckCurrentState(&G_au8AntApiCurrentData[CURRENT_STATE]);  
+         
       /* Update and queue the new message data */
       if(IsButtonPressed(BUTTON0)) {
         ButtonAcknowledge(BUTTON0);
@@ -219,6 +207,22 @@ static void UserAppSM_Idle(void)
     
   
 } /* end UserAppSM_Idle() */
+
+
+static void UserApp_CheckCurrentState(u8 *u8CurrentState) {
+  if(*u8CurrentState == 0xFF){
+    LedOff(YELLOW);
+    LedOn(GREEN);
+  }
+  else {
+    LedOff(GREEN);
+    LedBlink(YELLOW, LED_2HZ);
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDMessage(LINE1_START_ADDR, "Connection Lost!");
+    LCDMessage(LINE2_START_ADDR, "Disconnecting...");
+    /* call to close ANT */
+  }
+}
      
 #if 0
 /*-------------------------------------------------------------------------------------------------------------------*/
@@ -236,87 +240,6 @@ static void UserAppSM_FailedInit(void)
 {
     
 } /* end UserAppSM_FailedInit() */
-
-
-/*--------------------------------------------------------------------------------------------------------------------*/
-/* Setting up ships */
-bool SetupShips(u8 * au8PlaySea, u8 * au8OppSea) {
-  static u8 au8Ship[] = "#";
-  static bool bStarted = FALSE;
-  static bool bShipsSet = FALSE;
-  static u8 u8ShipCount = 0;
-  
-  if(WasButtonPressed(BUTTON0) && bStarted == FALSE)
-  {
-    ButtonAcknowledge(BUTTON0);
-    bStarted = TRUE;
-    
-    LCDCommand(LCD_CLEAR_CMD);
-    LCDMessage(LINE1_START_ADDR, au8OppSea);   
-    LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
-    LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR);
-  }
-  
-  if(WasButtonPressed(BUTTON1) && bStarted == TRUE && bShipsSet == FALSE)
-    {
-      ButtonAcknowledge(BUTTON1);
-      
-      if(u8CursorPosition == LINE2_START_ADDR)
-      {
-        u8CursorPosition = LINE2_END_ADDR;
-      }
-      else 
-      {
-        u8CursorPosition--;
-      }
-      
-      LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
-    }
-    
-    if(WasButtonPressed(BUTTON2) && bStarted == TRUE && bShipsSet == FALSE)
-    {
-      ButtonAcknowledge(BUTTON2);
-      
-       if(u8CursorPosition == LINE2_END_ADDR)
-      {
-        u8CursorPosition = LINE2_START_ADDR;
-      }
-      else 
-      {
-        u8CursorPosition++;
-      }
-      
-      LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
-    }
-    
-    if(WasButtonPressed(BUTTON3) && bStarted == TRUE && bShipsSet == FALSE)
-    {
-      ButtonAcknowledge(BUTTON3);
-      
-      LCDMessage(u8CursorPosition, au8Ship);
-      u8ShipCount++;
-      au8PlaySea[u8CursorPosition] = '#';
-      
-      if(u8CursorPosition == LINE2_END_ADDR)
-      {
-        u8CursorPosition = LINE2_START_ADDR;
-      }
-      else 
-      {
-        u8CursorPosition++;
-      }
-      
-      LCDCommand(LCD_ADDRESS_CMD | u8CursorPosition);
-      
-      if(u8ShipCount == MAX_SHIPS)
-      {
-        bShipsSet = TRUE;
-        LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
-        return TRUE;
-      }
-    }
-  return FALSE;
-}
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/

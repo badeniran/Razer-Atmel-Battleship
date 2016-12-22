@@ -86,8 +86,8 @@ Includes
 /* Common application header files */
 #include "debug.h"
 #include "music.h"
+#include "BattleShips.h"
 #include "user_app.h"
-
 
 /**********************************************************************************************************************
 !!!!! External peripheral assignments

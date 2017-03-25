@@ -42,22 +42,31 @@ Function Declarations
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/
-void UserApp1Initialize(void);
+void UserApp1Startup(void);
 void UserApp1RunActiveState(void);
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+void AcknowledgeButtons(void);
 
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
-static void UserApp1SM_Idle(void);    
+static void UserApp1SM_SetupShips(void);    
+static void UserApp1SM_ANTInit(void); 
+static void UserApp1SM_FailedInit(void);  
+static void UserApp1SM_CheckInitialConnection(void);
+static void UserApp1SM_ConnectionTimeout(void);
+static void UserApp1SM_WaitForMessage(void);
+static void UserApp1SM_GameState1(void);
+static void UserApp1SM_GameState2(void);
+static void UserApp1SM_HitOrMiss(void);
+static void UserApp1SM_Win(void);
+static void UserApp1SM_Loss(void);
 
-static void UserApp1SM_Error(void);         
-static void UserApp1SM_FailedInit(void);        
+
 
 
 #endif /* __USER_APP1_H */

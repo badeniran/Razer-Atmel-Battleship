@@ -59,7 +59,16 @@ Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
+static u8 au8MySea[][] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+                             {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
+static u8 au8OppSea[][] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}, 
+                             {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
 
+static u8 UserApp1_CursorPositionX;
+static u8 UserApp1_CursorPositionY;
+static u8 au8Ship[] = "#";
+static u8 au8Miss[] = "X";
+static u8 au8Hit[] = "O";
 
 /**********************************************************************************************************************
 Function Definitions
@@ -75,10 +84,10 @@ Function Definitions
 /*--------------------------------------------------------------------------------------------------------------------*/
 
 /*--------------------------------------------------------------------------------------------------------------------
-Function: UserApp1Initialize
+Function: UserApp1Startup
 
 Description:
-Initializes the State Machine and its variables.
+
 
 Requires:
   -
@@ -86,20 +95,10 @@ Requires:
 Promises:
   - 
 */
-void UserApp1Initialize(void)
+void UserApp1Startup(void)
 {
-  /* If good initialization, set state to Idle */
-  if( 1 )
-  {
-    UserApp1_StateMachine = UserApp1SM_Idle;
-  }
-  else
-  {
-    /* The task isn't properly initialized, so shut it down and don't run */
-    UserApp1_StateMachine = UserApp1SM_FailedInit;
-  }
-
-} /* end UserApp1Initialize() */
+ 
+} 
 
   
 /*----------------------------------------------------------------------------------------------------------------------
@@ -126,35 +125,315 @@ void UserApp1RunActiveState(void)
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+void AckowledgeButtons(void)
+{
+  ButtonAcknowledge(BUTTON0);
+  ButtonAcknowledge(BUTTON1);
+  ButtonAcknowledge(BUTTON2);
+  ButtonAcknowledge(BUTTON3);
+}
 
 /**********************************************************************************************************************
 State Machine Function Definitions
 **********************************************************************************************************************/
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* Wait for a message to be queued */
-static void UserApp1SM_Idle(void)
+
+static void UserApp1SM_SetupShips(void)
 {
+    static bool bFirstLine = TRUE;
+    static u8 u8BoatsPlaced = 0;
+    static u8 u8CruiserPiecesPlaced = 0;
+    static u8 u8CruisersPlaced = 0;
+    static u8 u8DestroyerPiecesPlaced = 0;
+    static u8 u8DestroyersPlaced = 0;
+    static u8 u8PreviousPlacementX;
+    static u8 u8PreviousPlacementY;
     
-} /* end UserApp1SM_Idle() */
-     
-#if 0
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* Handle an error */
-static void UserApp1SM_Error(void)          
+    LCDCommand(LCD_CLEAR_CMD);
+    LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR | LCD_DISPLAY_BLINK | LCD_HOME_CMD);
+    
+    if (WasButtonPressed(BUTTON0))
+    {
+      AcknowledgeButtons();
+      
+      if(UserApp_CursorPositionX == LINE1_START_ADDR - LINE1_START_ADDR)
+      {
+        UserApp_CursorPositionX == LINE1_END_ADDR - LINE1_START_ADDR;
+      }
+      else
+      {
+        UserApp_CursorPositionX--;
+      }
+      
+      LCDCommand(LCD_ADDRESS_CMD | (UserApp_CursorPositionX + UserApp_CursorPositionY));
+    }
+    else if (WasButtonPressed(BUTTON1))
+    {
+      AcknowledgeButtons();
+      
+      if(UserApp_CursorPositionX == LINE1_END_ADDR - LINE1_START_ADDR)
+      {
+        UserApp_CursorPositionX == LINE1_START_ADDR - LINE1_START_ADDR;
+      }
+      else
+      {
+        UserApp_CursorPositionX++;
+      }
+      
+      LCDCommand(LCD_ADDRESS_CMD | (UserApp_CursorPositionX + UserApp_CursorPositionY));
+    }
+    else if (WasButtonPressed(BUTTON2))
+    {
+      AcknowledgeButtons();
+      if (bFirstLine)
+      {
+        bFirstLine = FALSE;
+        UserApp_CursorPositionY = LINE2_START_ADDR;
+      }
+      else
+      {
+        bFirstLine = TRUE;
+        UserApp_CursorPositionY = LINE1_START_ADDR;
+      }
+      LCDCommand(LCD_ADDRESS_CMD | (UserApp_CursorPositionX + UserApp_CursorPositionY));
+    }
+    else if (WasButtonPressed(BUTTON3))
+    {
+      AcknowledgeButtons();
+      if (u8BoatPlaced < 2)
+      {
+        if (UserApp_CursorPositionY == LINE1_START_ADDR);
+        {
+          if (!au8MySea[0][UserApp_CursorPositionX])
+          {
+            au8MySea[0][UserApp_CursorPositionX] = 1;
+            //Update Sea
+            u8BoatsPlaced++;
+          }
+        }
+        else
+        {
+          if (!au8MySea[1][UserApp_CursorPositionX])
+          {
+            au8MySea[1][UserApp_CursorPositionX] = 1;
+            //Update Sea
+            u8BoatsPlaced++;
+          }
+        }
+      }
+      else if (u8CruisersPlaced < 2)
+      {
+        if (u8CruiserPiecesPlaced < 2)
+        {
+          if (UserApp_CursorPositionY == LINE1_START_ADDR)
+          {
+            if (u8CruiserPiecesPlaced == 0 && !au8MySea[0][UserApp_CursorPositionX])
+            {
+              au8MySea[0][UserApp_CursorPositionX] = 1;
+              //Update Sea
+              u8PreviousPlacementX = UserApp_CursorPositionX;
+              u8PreviousPlacementY = UserApp_CursorPositionY;
+              u8CruiserPiecesPlaced++;
+            }
+            else
+            {
+              if(u8PreviousPlacementX == LINE1_END_ADDR - LINE1_START_ADDR  && u8PreviousPlacementY = LINE1_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE1_END_ADDR - LINE1_START_ADDR - 1 && !au8MySea[0][UserApp_CursorPositionX])
+                {
+                  au8MySea[0][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if (u8PreviousPlacementX == LINE1_START_ADDR - LINE1_START_ADDR  && u8PreviousPlacementY = LINE1_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE1_START_ADDR - LINE1_START_ADDR + 1 && !au8MySea[0][UserApp_CursorPositionX])
+                {
+                  au8MySea[0][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if (u8PreviousPlacemetY = LINE1_START_ADDR)
+              {
+                if (!au8MySea[0][UserApp_CursorPositionX] && (UserApp_CursorPositionX == u8PreviousPlacementX + 1 || UserApp_CursorPositionX == u8PreviousPlacement - 1))
+                {
+                  au8MySea[0][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if(u8PreviousPlacementX == LINE1_END_ADDR - LINE1_START_ADDR  && u8PreviousPlacementY = LINE2_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE1_END_ADDR - LINE1_START_ADDR && !au8MySea[0][UserApp_CursorPositionX])
+                {
+                  au8MySea[0][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if (u8PreviousPlacementX == LINE1_START_ADDR - LINE1_START_ADDR  && u8PreviousPlacementY = LINE2_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE1_START_ADDR - LINE1_START_ADDR && !au8MySea[0][UserApp_CursorPositionX])
+                {
+                   au8MySea[0][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else 
+              {
+                if (UserApp_CursorPositionX == u8PreviousPlacementX && !au8MySea[0][UserApp_CursorPositionX])
+                {
+                   au8MySea[0][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+            }
+          }
+          else
+          {
+            if (u8CruiserPiecesPlaced == 0 && !au8MySea[1][UserApp_CursorPositionX])
+            {
+              au8MySea[1][UserApp_CursorPositionX] = 1;
+              //Update Sea
+              u8PreviousPlacementX = UserApp_CursorPositionX;
+              u8PreviousPlacementY = UserApp_CursorPositionY;
+              u8CruiserPiecesPlaced++;
+            }
+            else
+            {
+              if(u8PreviousPlacementX == LINE2_END_ADDR - LINE2_START_ADDR  && u8PreviousPlacementY = LINE2_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE2_END_ADDR - LINE2_START_ADDR - 1 && !au8MySea[1][UserApp_CursorPositionX])
+                {
+                  au8MySea[1][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if (u8PreviousPlacementX == LINE2_START_ADDR - LINE2_START_ADDR  && u8PreviousPlacementY = LINE2_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE2_START_ADDR - LINE2_START_ADDR + 1 && !au8MySea[1][UserApp_CursorPositionX])
+                {
+                  au8MySea[1][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if (u8PreviousPlacemetY = LINE2_START_ADDR)
+              {
+                if (!au8MySea[1][UserApp_CursorPositionX] && (UserApp_CursorPositionX == u8PreviousPlacementX + 1 || UserApp_CursorPositionX == u8PreviousPlacement - 1))
+                {
+                  au8MySea[1][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if(u8PreviousPlacementX == LINE2_END_ADDR - LINE2_START_ADDR  && u8PreviousPlacementY = LINE1_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE2_END_ADDR - LINE2_START_ADDR && !au8MySea[1][UserApp_CursorPositionX])
+                {
+                  au8MySea[1][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else if (u8PreviousPlacementX == LINE2_START_ADDR - LINE2_START_ADDR  && u8PreviousPlacementY = LINE1_START_ADDR)
+              {
+                if (UserApp_CursorPositionX == LINE2_START_ADDR - LINE2_START_ADDR && !au8MySea[1][UserApp_CursorPositionX])
+                {
+                   au8MySea[1][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+              else 
+              {
+                if (UserApp_CursorPositionX == u8PreviousPlacementX && !au8MySea[1][UserApp_CursorPositionX])
+                {
+                   au8MySea[1][UserApp_CursorPositionX] = 1;
+                  //Update Sea
+                  u8CruiserPiecesPlaced++;
+                  u8CruisersPlaced++;
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          u8CruiserPiecesPlaced = 0;
+          u8CruisersPlaced++;
+        }
+      }
+      else
+      {
+      }
+    }
+} 
+
+static void UserApp1SM_ANTInit(void)
 {
-  
-} /* end UserApp1SM_Error() */
-#endif
+}
 
 
-/*-------------------------------------------------------------------------------------------------------------------*/
-/* State to sit in if init failed */
-static void UserApp1SM_FailedInit(void)          
+static void UserApp1SM_FailedInit(void)
 {
-    
-} /* end UserApp1SM_FailedInit() */
+}
+
+
+static void UserApp1SM_CheckInitialConnection(void)
+{
+}
+
+
+static void UserApp1SM_ConnectionTimeout(void)
+{
+}
+
+
+static void UserApp1SM_WaitForMessage(void)
+{
+}
+
+
+static void UserApp1SM_GameState1(void)
+{
+}
+
+
+static void UserApp1SM_GameState2(void)
+{
+}
+
+
+static void UserApp1SM_HitOrMiss(void)
+{
+}
+
+static void UserApp1SM_Win(void)
+{
+}
+
+
+static void UserApp1SM_Loss(void)
+{
+}
 
 
 /*--------------------------------------------------------------------------------------------------------------------*/

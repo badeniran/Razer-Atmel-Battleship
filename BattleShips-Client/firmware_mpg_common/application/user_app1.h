@@ -42,9 +42,10 @@ Function Declarations
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/
-void UserApp1Initialize(void);
+void UserApp1ANTInit(void);
+void UserApp1Startup(void);
 void UserApp1RunActiveState(void);
-
+void UserApp1LightShow(void);
 
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */

@@ -59,6 +59,8 @@ Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
+static u8 UserApp1_CursorPositionX;
+static u8 UserApp1_CursorPositionY;
 
 
 /**********************************************************************************************************************
@@ -74,6 +76,51 @@ Function Definitions
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/
 
+
+/*----------------------------------------------------------------------------------------------------------------------
+Function: UserApp1Startup(void)
+
+Description:
+Display's initial message and Lights Show
+
+Requires:
+  -
+
+Promises:
+  -
+*/
+void UserApp1Startup(void) {
+  
+  LCDCommand(LCD_HOME_CMD);
+  UserApp1_CursorPositionX = 0;
+  UserApp1_CursorPositionY = LINE1_START_ADDR;
+  
+  static u8 au8InitialMessageL1[] = "Press Button 0";
+  static u8 au8InitialMessageL2[] = "To Start";
+  
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR + 3, au8InitialMessageL1);
+  LCDMessage(LINE2_START_ADDR + 5, au8InitialMessageL2);
+  
+  UserApp1_StateMachine = UserApp1SM_Idle;
+  
+}
+
+/*-----------------------------------------------------------------------------------------------------------------------
+Function: UserApp1LightShow
+
+Description:
+Creates a Light Show with the LED's by using variable PWM
+
+Requires:
+  -
+Promises:
+  -
+*/
+static void UserApp1LightShow(void) {
+  
+}
+
 /*--------------------------------------------------------------------------------------------------------------------
 Function: UserApp1Initialize
 
@@ -86,7 +133,7 @@ Requires:
 Promises:
   - 
 */
-void UserApp1Initialize(void)
+void UserApp1ANTInit(void)
 {
   /* If good initialization, set state to Idle */
   if( 1 )
@@ -136,7 +183,36 @@ State Machine Function Definitions
 /* Wait for a message to be queued */
 static void UserApp1SM_Idle(void)
 {
+  static u16 u16Counter = 0;
+  static LedNumberType LedArray[] = {WHITE, PURPLE, BLUE, CYAN, GREEN, YELLOW, ORANGE, RED}; 
+  static u8 u8Led = 0;
+  static u8 u8dirRight = 1;       /* if u8dirRight = 1, LED wave travels to the right */
+  
+  u16Counter++;
+  
+  if(u16Counter == 200){
+    u16Counter = 0;
+    LedOn(LedArray[u8Led]);
     
+    if(u8Led > 0 && u8dirRight)
+      LedOff(LedArray[u8Led-1]);
+    else
+      LedOff(LedArray[u8Led+1]);
+    
+    if(LedArray[u8Led] >= RED){
+      u8dirRight = 0;
+      LedOff(LedArray[u8Led-1]);
+    }
+    else if(LedArray[u8Led] == 0){
+      u8dirRight = 1;
+    }
+    
+    if(u8dirRight)
+      u8Led++;
+    else
+      u8Led--;
+  }
+
 } /* end UserApp1SM_Idle() */
      
 #if 0

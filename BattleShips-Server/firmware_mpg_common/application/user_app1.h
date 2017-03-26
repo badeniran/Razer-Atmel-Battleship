@@ -54,6 +54,7 @@ void AcknowledgeButtons(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
+static void UserApp1SM_StartupIdle(void);
 static void UserApp1SM_SetupShips(void);    
 static void UserApp1SM_ANTInit(void); 
 static void UserApp1SM_FailedInit(void);  

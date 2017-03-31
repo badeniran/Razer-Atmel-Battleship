@@ -41,15 +41,16 @@ Constants / Definitions
 
 /* Required constants for ANT channel configuration */
 
-#define SLEEP_TIME (u32) 5000                                                          // Time to sleep before retrying ant config
-#define INIT_CONNECT_TIMEOUT (u32) 30000                                               // Time to wait before initial connection timeout
-#define WAIT_TIME (u32) 10000                                                          // Time to wait for message from Player1
+#define SLEEP_TIME (u16) 5000                                                          // Time to sleep before retrying ant config
+#define INIT_CONNECT_TIMEOUT (u16) 30000                                               // Time to wait before initial connection timeout
+#define WAIT_TIME (u16) 10000                                                          // Time to wait for message from Player1
 
 
 /*Ant Data Information*/
-#define ANT_UNUSED_BYTE (u8) 0xff       
-#define ANT_MESSAGE_CONSTANT (u8) 0xcb
-#define ANT_CONSTANT_BYTE (u8) 0
+#define ANT_UNUSED_BYTE (u8) 0xff                                                       // Any bytes that are not being used in a message hold this value
+#define ANT_MESSAGE_CONSTANT (u8) 0xcb                                                  // The message constant to know that the message being received is for this application
+// Message Layout (Bytes 6 and 7 are not used)
+#define ANT_CONSTANT_BYTE (u8) 0                                                              
 #define ANT_X_BYTE (u8) 1
 #define ANT_Y_BYTE (u8) 2
 #define ANT_HIT_OR_MISS_BYTE (u8) 3

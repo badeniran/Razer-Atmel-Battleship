@@ -74,15 +74,15 @@ static u8 UserApp1_au8OppSea[2][20] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 
 static u8 UserApp1_CursorPositionX;                                                     // Keeps track of the cursor's X position
 static u8 UserApp1_CursorPositionY;                                                     // Keeps track of the cursor's Y position
-static u8 UserApp1_TargetX;
-static u8 UserApp1_TargetY;
-static u8 UserApp1_MyPiecesHit = 0;
-static u8 UserApp1_au8DataPackOut[] = {ANT_MESSAGE_CONSTANT, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, 
+static u8 UserApp1_TargetX;                                                             // Keeps track of the Target X Position
+static u8 UserApp1_TargetY;                                                             // Keeps track of the Target Y Position
+static u8 UserApp1_MyPiecesHit = 0;                                                     // Keeps track of how many pieces have been hit on MySea
+static u8 UserApp1_au8DataPackOut[] = {ANT_MESSAGE_CONSTANT, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE,  // The message that will be sent out vai ANT
                                         ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE};
-static u8 UserApp1_au8Ship[] = "#";                                                    
-static u8 UserApp1_au8Miss[] = "O";
-static u8 UserApp1_au8Hit[] = "X";
-static bool bMessageReceived = FALSE;
+static u8 UserApp1_au8Ship[] = "#";                                                    // What will be displayed as a ship on the LCD
+static u8 UserApp1_au8Miss[] = "O";                                                    // What will be displayed as a miss on the LCD
+static u8 UserApp1_au8Hit[] = "X";                                                      // What will be displayed as a hit on the LCD
+static bool bMessageReceived = FALSE;                                                   // Keeps track of whether a Message has been Received (Used in GameStates)
 
 /*********************************************************************************************************************
 Constants/Definitions
@@ -864,24 +864,24 @@ static void UserApp1SM_SetupShips(void)
 
 static void UserApp1SM_FailedInit(void)
 {
-  static u32 u32SleepCounter = 0;
+  static u16 u16SleepCounter = 0;
   // "Sleep" for 5 seconds before retrying configuration
-  if(u32SleepCounter == SLEEP_TIME)
+  if(u16SleepCounter == SLEEP_TIME)
       {
-         u32SleepCounter = 0;
+         u16SleepCounter = 0;
          LedOff(RED);
          UserApp1_StateMachine = UserApp1Startup;
       }
       else
       {
-        u32SleepCounter++;
+        u16SleepCounter++;
       }
 }
 
 
 static void UserApp1SM_CheckInitialConnection(void)
 {
-  static u32 u32InitialConnectionCounter = 0;
+  static u16 u16InitialConnectionCounter = 0;
   // Check for any incoming DATA messages
   if (AntReadData() && G_eAntApiCurrentMessageClass == ANT_DATA)
   {
@@ -909,9 +909,9 @@ static void UserApp1SM_CheckInitialConnection(void)
   else
   {
     // If there are no messages, check to see if 30 seconds is up 
-    if(u32InitialConnectionCounter == INIT_CONNECT_TIMEOUT)
-      {
-         u32InitialConnectionCounter = 0;
+    if(u16InitialConnectionCounter == INIT_CONNECT_TIMEOUT)
+      { // If 30 seconds is up display message and change state
+         u16InitialConnectionCounter = 0;
          LedOff(YELLOW);
          LedOn(RED);
          LCDCommand(LCD_CLEAR_CMD);
@@ -919,9 +919,9 @@ static void UserApp1SM_CheckInitialConnection(void)
          LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
          UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
       }
-      else
+      else //Otherwise, increment counter
       {
-        u32InitialConnectionCounter++;
+        u16InitialConnectionCounter++;
       }
   }
 }
@@ -935,16 +935,17 @@ static void UserApp1SM_ConnectionTimeout(void)
 
 static void UserApp1SM_WaitForMessage(void)
 {
-  static u16 u16Timer = 0;
+  static u16 u16Timer = 0; // Timer to keep track of how long it has been waiting for a message 
   if (AntReadData() && G_eAntApiCurrentMessageClass == ANT_DATA && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
-  {
-    LedOff(BLUE);
-    UserApp1_StateMachine = UserApp1SM_HitOrMiss;
+  {// If there is a DATA read and the message contains the Message Constant for this application
+    LedOff(BLUE); // Turn the Blue LED Off
+    UserApp1_StateMachine = UserApp1SM_HitOrMiss; // Change state to determine whether or not it was a hit or miss
   }
-  else
+  else 
   {
-    if (u16Timer == 10000)
+    if (u16Timer == WAIT_TIME) // If time is up
     {
+      // Turn on RED LED and display message and change state
       LedOff(BLUE);
       LedOn(RED);
       LCDCommand(LCD_CLEAR_CMD);
@@ -952,7 +953,7 @@ static void UserApp1SM_WaitForMessage(void)
       LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
       UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
     }
-    else
+    else // Otherwise, increment the timer
     {
       u16Timer++;
     }
@@ -972,16 +973,18 @@ static void UserApp1SM_GameState2(void)
 
 static void UserApp1SM_HitOrMiss(void)
 {
-  if (UserApp1_LastGameState == UserApp1SM_GameState1)
+  if (UserApp1_LastGameState == UserApp1SM_GameState1) // If the last game state was gamestate1
   {
+    // Copy hit/miss and win bytes
     u8 u8Hit = G_au8AntApiCurrentData[ANT_HIT_OR_MISS_BYTE];
     u8 u8Win = G_au8AntApiCurrentData[ANT_WIN_BYTE];
-    if (u8Hit)
+    UserApp1_StateMachine = UserApp1SM_GameState2;
+    if (u8Hit) // If there is a hit
     {
       if (UserApp1_TargetY == LINE1_START_ADDR)
       {
-        UserApp1_au8OppSea[0][UserApp1_TargetX] = 2;
-        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
+        UserApp1_au8OppSea[0][UserApp1_TargetX] = 2; // Change to a 2 to indicate a hit
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit); // Update sea
       }
       else
       {
@@ -989,11 +992,11 @@ static void UserApp1SM_HitOrMiss(void)
         LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
       }
     }
-    else
+    else // If there is a miss
     {
       if (UserApp1_TargetY == LINE1_START_ADDR)
       {
-        UserApp1_au8OppSea[0][UserApp1_TargetX] = 3;
+        UserApp1_au8OppSea[0][UserApp1_TargetX] = 3; // Change to a 3 to indicate a miss
         LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
       }
       else
@@ -1003,37 +1006,40 @@ static void UserApp1SM_HitOrMiss(void)
       } 
     }
     
-    UserApp1_StateMachine = UserApp1SM_GameState1;
-    
-    if (u8Win == 1)
+    if (u8Win == 1) // If there is a win
     {
+      // Set up buzzers to play winner tone
       PWMAudioSetFrequency(BUZZER1, C3);
       PWMAudioSetFrequency(BUZZER2, C3);
       PWMAudioOn(BUZZER1);
       UserApp1_StateMachine = UserApp1SM_Win;
     }
   }
-  else
+  else // Lastgame state was gamestate 2
   {
+    // Copy the target coordinate that the opponent chose 
     UserApp1_TargetY = G_au8AntApiCurrentData[ANT_Y_BYTE];
     UserApp1_TargetX = G_au8AntApiCurrentData[ANT_X_BYTE];
-    if (UserApp1_TargetY == LINE1_START_ADDR)
+    UserApp1_StateMachine = UserApp1SM_GameState1;
+    if (UserApp1_TargetY == LINE1_START_ADDR) // Target was on the first line
     {
-      if(UserApp1_au8MySea[0][UserApp1_TargetX])
+      if(UserApp1_au8MySea[0][UserApp1_TargetX]) // If there is a ship piece at those coordinates
       {
+        // Increment the number of pieces hit and set the hit/miss byte to 1
         UserApp1_MyPiecesHit++;
         UserApp1_au8DataPackOut[ANT_HIT_OR_MISS_BYTE] = 1;
-        UserApp1_au8MySea[0][UserApp1_TargetX] = 2;
+        UserApp1_au8MySea[0][UserApp1_TargetX] = 2; // Change to a 2 to indicate a hit
         LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
       }
-      else
+      else // If there is not a ship piece at those coordinates
       {
+        // Set the hit/miss byte to 0
         UserApp1_au8DataPackOut[ANT_HIT_OR_MISS_BYTE] = 0;
-        UserApp1_au8MySea[0][UserApp1_TargetX] = 3;
+        UserApp1_au8MySea[0][UserApp1_TargetX] = 3; // Change to a 3 to indicate a miss
         LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
       }
     }
-    else
+    else // Target was on the second line
     {
       if(UserApp1_au8MySea[1][UserApp1_TargetX])
       {
@@ -1049,10 +1055,10 @@ static void UserApp1SM_HitOrMiss(void)
         LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
       }
     }
-    
-    if(UserApp1_MyPiecesHit == 9)
+    if(UserApp1_MyPiecesHit == 9) // If all the pieces have been hit
     {
-      UserApp1_au8DataPackOut[ANT_WIN_BYTE] = 1;
+      // Set the win byte to 1 and setup the buzzers to play the losing tune
+      UserApp1_au8DataPackOut[ANT_WIN_BYTE] = 1; 
       PWMAudioSetFrequency(BUZZER1, 1000);
       PWMAudioSetFrequency(BUZZER2, 1000);
       PWMAudioOn(BUZZER1);
@@ -1069,11 +1075,12 @@ static void UserApp1SM_Win(void)
   LCDCommand(LCD_CLEAR_CMD);
   LCDMessage(LINE1_START_ADDR, "WINNER! Press Button0");
   LCDMessage(LINE2_START_ADDR, "To Play Again");
-  static bool abNote [] = {TRUE, FALSE, FALSE};
-  static u16 u16Buzzer1Length = 0;
-  static u16 u16Buzzer2Length = 0;
+  static bool abNote [] = {TRUE, FALSE, FALSE}; // Indicates whether or not a note is playing
+  static u16 u16Buzzer1Length = 0; // Length of time buzzer1 has been playing
+  static u16 u16Buzzer2Length = 0; // Length of time buzzer2 has been playing
   
-  if (u16Buzzer1Length == 600 && abNote[0])
+  // Play the first note on the first buzzer. Once 600 ms has gone by, turn off the first buzzer and turn on the second buzzer
+  if (u16Buzzer1Length == 600 && abNote[0]) 
   {
     PWMAudioOff(BUZZER1);
     PWMAudioOn(BUZZER2);
@@ -1086,6 +1093,8 @@ static void UserApp1SM_Win(void)
     u16Buzzer1Length++;
   }
   
+  // Play the first note on the second buzzer. Once 600 ms has gone by, turn off the second buzzer, change the note of the first buzzer
+  // And turn on the first buzzer
   if (u16Buzzer2Length == 600 && abNote[0])
   {
     PWMAudioOff(BUZZER2);
@@ -1100,6 +1109,7 @@ static void UserApp1SM_Win(void)
     u16Buzzer2Length++;
   }
   
+  // Once the 
   if (u16Buzzer1Length == 600 && abNote[2])
   {
     PWMAudioOff(BUZZER1);

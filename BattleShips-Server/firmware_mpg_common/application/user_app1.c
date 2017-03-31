@@ -919,10 +919,9 @@ static void UserApp1SM_CheckInitialConnection(void)
          LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
          UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
       }
-      else //Otherwise, increment counter
-      {
+
+		// Increment Counter
         u16InitialConnectionCounter++;
-      }
   }
 }
 
@@ -963,11 +962,177 @@ static void UserApp1SM_WaitForMessage(void)
 
 static void UserApp1SM_GameState1(void)
 {
+	static u8 u8Rows = 0;
+	static u8 u8Cols = 0;
+	
+	if(u8Rows < 2) {
+	if(u8Rows == 0) {
+		if(u8Cols < 20) {
+			if(UserApp1_au8OppSea[u8Rows][u8Cols] == 1)
+				LCDMessage(LINE1_START_ADDR + u8Cols, UserApp1_au8Ship);
+			else if(UserApp1_au8OppSea[u8Rows][u8Cols] == 2)
+				LCDMessage(LINE1_START_ADDR + u8Cols, UserApp1_au8Hit);
+			else if(UserApp1_au8OppSea[u8Rows][u8Cols] == 3)
+				LCDMessage(LINE1_START_ADDR + u8Cols, UserApp1_au8Miss);
+			u8Cols++;
+		}
+		else {
+			u8Rows++;
+			u8Cols = 0;
+		}
+	}
+	
+	else{
+		if(u8Cols < 20) {
+			if(UserApp1_au8OppSea[u8Rows][u8Cols] == 1)
+				LCDMessage(LINE2_START_ADDR + u8Cols, UserApp1_au8Ship);
+			else if(UserApp1_au8OppSea[u8Rows][u8Cols] == 2)
+				LCDMessage(LINE2_START_ADDR + u8Cols, UserApp1_au8Hit);
+			else if(UserApp1_au8OppSea[u8Rows][u8Cols] == 3)
+				LCDMessage(LINE2_START_ADDR + u8Cols, UserApp1_au8Miss);
+			u8Cols++;
+		}
+		else {
+			u8Rows++;
+			u8Cols = 0;
+		}
+	}
+	}
+	else {
+		if (WasButtonPressed(BUTTON0))
+		{
+		AcknowledgeButtons();
+		// If the cursor is on the left edge, update it to the right edge, otherwise, move it left
+		if (UserApp1_CursorPositionX == 0)
+		{
+			UserApp1_CursorPositionX = 19;
+		}
+		else
+		{
+			UserApp1_CursorPositionX--;
+		}  
+      
+		// Update screen
+		LCDCommand(LCD_ADDRESS_CMD | (UserApp1_CursorPositionX + UserApp1_CursorPositionY));
+    } 
+    else if (WasButtonPressed(BUTTON1))
+    {
+      AcknowledgeButtons();
+      // If the cursor is on the right edge, update it to the left edge, otherwise, move it right
+      if (UserApp1_CursorPositionX == 19)
+      {
+        UserApp1_CursorPositionX = 0;
+      }
+      else
+      {
+        UserApp1_CursorPositionX++;
+      }
+      
+      // Update screen
+      LCDCommand(LCD_ADDRESS_CMD | (UserApp1_CursorPositionX + UserApp1_CursorPositionY));
+    }
+    else if (WasButtonPressed(BUTTON2))
+    {
+      AcknowledgeButtons();
+      // If the cursor is on the first line move it to the second line, otherwise, move it to the first line
+      if(UserApp1_CursorPositionY == LINE1_START_ADDR)
+      {
+        UserApp1_CursorPositionY = LINE2_START_ADDR;
+      }
+      else
+      {
+        UserApp1_CursorPositionY = LINE1_START_ADDR;
+      }
+      
+      //Update Screen
+      LCDCommand(LCD_ADDRESS_CMD | (UserApp1_CursorPositionX + UserApp1_CursorPositionY));
+    }
+	else if(WasButtonPressed(BUTTON3)) {
+		AcknowledgeButtons();
+		if (UserApp1_CursorPositionY == LINE1_START_ADDR)
+		{
+			if (!UserApp1_au8OppSea[0][UserApp1_CursorPositionX])
+			{
+				UserApp1_TargetX = UserApp1_CursorPositionX;
+				UserApp1_TargetY = UserApp1_CursorPositionY;
+				UserApp1_au8DataPackOut[ANT_X_BYTE] = UserApp1_TargetX;
+				UserApp1_au8DataPackOut[ANT_Y_BYTE] = UserApp1_TargetY;
+				AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+				LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
+				UserApp1_LastGameState = UserApp1SM_GameState1;
+				LedOff(GREEN);
+				LedBlink(BLUE, LED_2HZ);
+        u8Rows = 0;
+				UserApp1_StateMachine = UserApp1SM_WaitForMessage;
+			}
+		}
+		else
+		{
+			if (!UserApp1_au8OppSea[1][UserApp1_CursorPositionX])
+			{
+				UserApp1_TargetX = UserApp1_CursorPositionX;
+				UserApp1_TargetY = UserApp1_CursorPositionY;
+				UserApp1_au8DataPackOut[ANT_X_BYTE] = UserApp1_TargetX;
+				UserApp1_au8DataPackOut[ANT_Y_BYTE] = UserApp1_TargetY;
+				AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+				LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
+				UserApp1_LastGameState = UserApp1SM_GameState1;
+				LedOff(GREEN);
+				LedBlink(BLUE, LED_2HZ);
+        u8Rows = 0;
+				UserApp1_StateMachine = UserApp1SM_WaitForMessage;
+			}
+		}
+	}
+	}
 }
 
 
 static void UserApp1SM_GameState2(void)
 {
+	static u8 u8Rows = 0;
+	static u8 u8Cols = 0;
+	
+	if(u8Rows == 0) {
+		if(u8Cols < 20) {
+			if(UserApp1_au8MySea[u8Rows][u8Cols] == 1)
+				LCDMessage(LINE1_START_ADDR + u8Cols, UserApp1_au8Ship);
+			else if(UserApp1_au8MySea[u8Rows][u8Cols] == 2)
+				LCDMessage(LINE1_START_ADDR + u8Cols, UserApp1_au8Hit);
+			else if(UserApp1_au8MySea[u8Rows][u8Cols] == 3)
+				LCDMessage(LINE1_START_ADDR + u8Cols, UserApp1_au8Miss);
+			u8Cols++;
+		}
+		else {
+			u8Rows++;
+			u8Cols = 0;
+		}
+	}
+	
+	else if(u8Rows == 1) {
+		if(u8Cols < 20) {
+			if(UserApp1_au8MySea[u8Rows][u8Cols] == 1)
+				LCDMessage(LINE2_START_ADDR + u8Cols, UserApp1_au8Ship);
+			else if(UserApp1_au8MySea[u8Rows][u8Cols] == 2)
+				LCDMessage(LINE2_START_ADDR + u8Cols, UserApp1_au8Hit);
+			else if(UserApp1_au8MySea[u8Rows][u8Cols] == 3)
+				LCDMessage(LINE2_START_ADDR + u8Cols, UserApp1_au8Miss);
+			u8Cols++;
+		}
+		else {
+			u8Rows++;
+			u8Cols = 0;
+		}
+	}
+	
+	else {
+		u8Rows = 0;
+		UserApp1_LastGameState = UserApp1SM_GameState2;
+		LedOff(GREEN);
+		LedBlink(BLUE, LED_2HZ);
+		UserApp1_StateMachine = UserApp1SM_WaitForMessage;
+	}
+	
 }
 
 
@@ -1014,6 +1179,8 @@ static void UserApp1SM_HitOrMiss(void)
       PWMAudioOn(BUZZER1);
       UserApp1_StateMachine = UserApp1SM_Win;
     }
+	
+	LCDCommand(LCD_CLEAR_CMD);
   }
   else // Lastgame state was gamestate 2
   {
@@ -1065,7 +1232,13 @@ static void UserApp1SM_HitOrMiss(void)
       PWMAudioOn(BUZZER2);
       UserApp1_StateMachine = UserApp1SM_Loss;
     }
+	else
+	{ // Next state will be gamestate1 so blink cursor
+		LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR | LCD_DISPLAY_BLINK);
+	}
     AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+	LCDCommand(LCD_CLEAR_CMD);
+	}
   }
 }
 

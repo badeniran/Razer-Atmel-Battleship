@@ -28,25 +28,33 @@ Type Definitions
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
+#define ANT_CHANNEL_USERAPP             (u8)0                 // Channel 0 - 7
+#define ANT_SERIAL_LO_USERAPP           (u8)0xba              // Device # Low byte
+#define ANT_SERIAL_HI_USERAPP           (u8)0xca              // Device # High byte
+#define ANT_DEVICE_TYPE_USERAPP         (u8)1                 // 1 - 255
+#define ANT_TRANSMISSION_TYPE_USERAPP   (u8)1                 // 1-127; MSB is pairing
+#define ANT_CHANNEL_PERIOD_LO_USERAPP   (u8)0x00              // LO; 0x0001 - 0x7fff
+#define ANT_CHANNEL_PERIOD_HI_USERAPP   (u8)0x20              // HI; 0x0001 - 0x7fff
+#define ANT_FREQUENCY_USERAPP           (u8)50                // 2400MHz + 0 - 99 MHz
+#define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_0DBM   // Max tx power
+
 /* Required constants for ANT channel configuration */
-#define ANT_CHANNEL_USERAPP             (u8)0                 
-#define ANT_SERIAL_LO_USERAPP           (u8)0xBA                 
-#define ANT_SERIAL_HI_USERAPP           (u8)0xCA                 
-#define ANT_DEVICE_TYPE_USERAPP         (u8)0                 
-#define ANT_TRANSMISSION_TYPE_USERAPP   (u8)0                 
-#define ANT_CHANNEL_PERIOD_LO_USERAPP   (u8)0x00              
-#define ANT_CHANNEL_PERIOD_HI_USERAPP   (u8)0x20              
-#define ANT_FREQUENCY_USERAPP           (u8)50                
-#define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_0DBM
+
+#define SLEEP_TIME 				(u16) 5000                                                          // Time to sleep before retrying ant config
+#define INIT_CONNECT_TIMEOUT 	(u16) 10000                                               // Time to wait before initial connection timeout
+#define WAIT_TIME 				(u16) 10000                                                          // Time to wait for message from Player1
 
 
-/*Constants for requesting G_au8AntApiCurrentData elements*/ 
-#define ANT_CONSTANT                    (u8)0
-#define ANT_XPOS                        (u8)1
-#define ANT_YPOS                        (u8)2
-#define ANT_HITORMISS                   (u8)3
-#define ANT_WIN                         (u8)4
-#define ANT_READYBYTE                   (u8)5
+/*Ant Data Information*/
+#define ANT_UNUSED_BYTE (u8) 0xff                                                       // Any bytes that are not being used in a message hold this value
+#define ANT_MESSAGE_CONSTANT (u8) 0xcb                                                  // The message constant to know that the message being received is for this application
+// Message Layout (Bytes 6 and 7 are not used)
+#define ANT_CONSTANT_BYTE (u8) 0                                                              
+#define ANT_X_BYTE (u8) 1
+#define ANT_Y_BYTE (u8) 2
+#define ANT_HIT_OR_MISS_BYTE (u8) 3
+#define ANT_WIN_BYTE (u8) 4
+#define ANT_READY_BYTE (u8) 5
 
 /**********************************************************************************************************************
 Function Declarations
@@ -60,10 +68,8 @@ Function Declarations
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/
-void UserApp1Initialize(void);
+void UserApp1Startup(void);
 void UserApp1RunActiveState(void);
-void UserApp1LightShow(void);
-void UserApp1ANTInit(void);
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
@@ -72,7 +78,7 @@ void AcknowledgeButtons(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
-static void UserApp1SM_Idle(void);    
+static void UserApp1SM_LightsShow(void);    
 static void UserApp1SM_SetupShips(void);
 static void UserApp1SM_FailedInit(void);  
 static void UserApp1SM_CheckInitialConnection(void);

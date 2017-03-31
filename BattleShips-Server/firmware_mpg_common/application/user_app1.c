@@ -63,6 +63,7 @@ Global variable definitions with scope limited to this local application.
 Variable names shall start with "UserApp_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
+static fnCode_type UserApp1_LastGameState;              
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
 static u8 UserApp1_au8MySea[2][20] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},               
                              {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};                // 2-d array that contains data on Player0's Sea
@@ -73,31 +74,21 @@ static u8 UserApp1_au8OppSea[2][20] = {{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
 
 static u8 UserApp1_CursorPositionX;                                                     // Keeps track of the cursor's X position
 static u8 UserApp1_CursorPositionY;                                                     // Keeps track of the cursor's Y position
+static u8 UserApp1_TargetX;
+static u8 UserApp1_TargetY;
+static u8 UserApp1_MyPiecesHit = 0;
+static u8 UserApp1_au8DataPackOut[] = {ANT_MESSAGE_CONSTANT, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, 
+                                        ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE, ANT_UNUSED_BYTE};
 static u8 UserApp1_au8Ship[] = "#";                                                    
-static u8 UserApp1_au8Miss[] = "X";
-static u8 UserApp1_au8Hit[] = "O";
+static u8 UserApp1_au8Miss[] = "O";
+static u8 UserApp1_au8Hit[] = "X";
 static bool bMessageReceived = FALSE;
 
 /*********************************************************************************************************************
 Constants/Definitions
 **********************************************************************************************************************/
 
-/* Required constants for ANT channel configuration */
 
-#define SLEEP_TIME (u32) 5000                                                          // Time to sleep before retrying ant config
-#define INIT_CONNECT_TIMEOUT (u32) 30000                                               // Time to wait before initial connection timeout
-#define WAIT_TIME (u32) 10000                                                          // Time to wait for message from Player1
-
-
-/*Ant Data Information*/
-#define ANT_UNUSED_BYTE (u8) 0xff       
-#define ANT_MESSAGE_CONSTANT (u8) 0xcb
-#define ANT_CONSTANT_BYTE (u8) 0
-#define ANT_X_BYTE (u8) 1
-#define ANT_Y_BYTE (u8) 2
-#define ANT_HIT_OR_MISS_BYTE (u8) 3
-#define ANT_WIN_BYTE (u8) 4
-#define ANT_READY_BYTE (u8) 5 
 
 
 /**********************************************************************************************************************
@@ -891,12 +882,10 @@ static void UserApp1SM_FailedInit(void)
 static void UserApp1SM_CheckInitialConnection(void)
 {
   static u32 u32InitialConnectionCounter = 0;
-  // Check for any incoming messages
-  if (AntReadData())
+  // Check for any incoming DATA messages
+  if (AntReadData() && G_eAntApiCurrentMessageClass == ANT_DATA)
   {
-    // If it's data check if it's ready byte is 1
-    if (G_eAntApiCurrentMessageClass == ANT_DATA)
-    {
+    // check if it's ready byte is 1
       if (G_au8AntApiCurrentData[ANT_READY_BYTE] == 1 && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
       {
         // Player 1 is ready and the message is actually from player 1 so change to GameState1
@@ -916,25 +905,6 @@ static void UserApp1SM_CheckInitialConnection(void)
         LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
         UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
       }
-    }
-    else
-    {
-      // If it's a tick, check to see if 30 seconds is up
-      if(u32InitialConnectionCounter == INIT_CONNECT_TIMEOUT)
-      {
-         u32InitialConnectionCounter = 0;
-         LedOff(YELLOW);
-         LedOn(RED);
-         LCDCommand(LCD_CLEAR_CMD);
-         LCDMessage(LINE1_START_ADDR + 1, "Connection Timeout");
-         LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
-         UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
-      }
-      else
-      {
-        u32InitialConnectionCounter++;
-      }
-    }
   }
   else
   {
@@ -965,6 +935,28 @@ static void UserApp1SM_ConnectionTimeout(void)
 
 static void UserApp1SM_WaitForMessage(void)
 {
+  static u16 u16Timer = 0;
+  if (AntReadData() && G_eAntApiCurrentMessageClass == ANT_DATA && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
+  {
+    LedOff(BLUE);
+    UserApp1_StateMachine = UserApp1SM_HitOrMiss;
+  }
+  else
+  {
+    if (u16Timer == 10000)
+    {
+      LedOff(BLUE);
+      LedOn(RED);
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR + 1, "Connection Timeout");
+      LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
+      UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
+    }
+    else
+    {
+      u16Timer++;
+    }
+  }
 }
 
 
@@ -980,15 +972,172 @@ static void UserApp1SM_GameState2(void)
 
 static void UserApp1SM_HitOrMiss(void)
 {
+  if (UserApp1_LastGameState == UserApp1SM_GameState1)
+  {
+    u8 u8Hit = G_au8AntApiCurrentData[ANT_HIT_OR_MISS_BYTE];
+    u8 u8Win = G_au8AntApiCurrentData[ANT_WIN_BYTE];
+    if (u8Hit)
+    {
+      if (UserApp1_TargetY == LINE1_START_ADDR)
+      {
+        UserApp1_au8OppSea[0][UserApp1_TargetX] = 2;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
+      }
+      else
+      {
+        UserApp1_au8OppSea[1][UserApp1_TargetX] = 2;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
+      }
+    }
+    else
+    {
+      if (UserApp1_TargetY == LINE1_START_ADDR)
+      {
+        UserApp1_au8OppSea[0][UserApp1_TargetX] = 3;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
+      }
+      else
+      {
+        UserApp1_au8OppSea[1][UserApp1_TargetX] = 3;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
+      } 
+    }
+    
+    UserApp1_StateMachine = UserApp1SM_GameState1;
+    
+    if (u8Win == 1)
+    {
+      PWMAudioSetFrequency(BUZZER1, C3);
+      PWMAudioSetFrequency(BUZZER2, C3);
+      PWMAudioOn(BUZZER1);
+      UserApp1_StateMachine = UserApp1SM_Win;
+    }
+  }
+  else
+  {
+    UserApp1_TargetY = G_au8AntApiCurrentData[ANT_Y_BYTE];
+    UserApp1_TargetX = G_au8AntApiCurrentData[ANT_X_BYTE];
+    if (UserApp1_TargetY == LINE1_START_ADDR)
+    {
+      if(UserApp1_au8MySea[0][UserApp1_TargetX])
+      {
+        UserApp1_MyPiecesHit++;
+        UserApp1_au8DataPackOut[ANT_HIT_OR_MISS_BYTE] = 1;
+        UserApp1_au8MySea[0][UserApp1_TargetX] = 2;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
+      }
+      else
+      {
+        UserApp1_au8DataPackOut[ANT_HIT_OR_MISS_BYTE] = 0;
+        UserApp1_au8MySea[0][UserApp1_TargetX] = 3;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
+      }
+    }
+    else
+    {
+      if(UserApp1_au8MySea[1][UserApp1_TargetX])
+      {
+        UserApp1_MyPiecesHit++;
+        UserApp1_au8DataPackOut[ANT_HIT_OR_MISS_BYTE] = 1;
+        UserApp1_au8MySea[1][UserApp1_TargetX] = 2;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Hit);
+      }
+      else
+      {
+        UserApp1_au8DataPackOut[ANT_HIT_OR_MISS_BYTE] = 0;
+        UserApp1_au8MySea[1][UserApp1_TargetX] = 3;
+        LCDMessage((UserApp1_TargetY + UserApp1_TargetX), UserApp1_au8Miss);
+      }
+    }
+    
+    if(UserApp1_MyPiecesHit == 9)
+    {
+      UserApp1_au8DataPackOut[ANT_WIN_BYTE] = 1;
+      PWMAudioSetFrequency(BUZZER1, 1000);
+      PWMAudioSetFrequency(BUZZER2, 1000);
+      PWMAudioOn(BUZZER1);
+      PWMAudioOn(BUZZER2);
+      UserApp1_StateMachine = UserApp1SM_Loss;
+    }
+    AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+  }
 }
+
 
 static void UserApp1SM_Win(void)
 {
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR, "WINNER! Press Button0");
+  LCDMessage(LINE2_START_ADDR, "To Play Again");
+  static bool abNote [] = {TRUE, FALSE, FALSE};
+  static u16 u16Buzzer1Length = 0;
+  static u16 u16Buzzer2Length = 0;
+  
+  if (u16Buzzer1Length == 600 && abNote[0])
+  {
+    PWMAudioOff(BUZZER1);
+    PWMAudioOn(BUZZER2);
+    abNote[0] = FALSE;
+    abNote[1] = TRUE;
+    u16Buzzer1Length = 0;
+  }
+  else if (abNote[0])
+  {
+    u16Buzzer1Length++;
+  }
+  
+  if (u16Buzzer2Length == 600 && abNote[0])
+  {
+    PWMAudioOff(BUZZER2);
+    PWMAudioSetFrequency(BUZZER1, G3);
+    PWMAudioOn(BUZZER1);
+    abNote[1] = FALSE;
+    abNote[2] = TRUE;
+    u16Buzzer2Length = 0;
+  }
+  else if (abNote[1])
+  {
+    u16Buzzer2Length++;
+  }
+  
+  if (u16Buzzer1Length == 600 && abNote[2])
+  {
+    PWMAudioOff(BUZZER1);
+    abNote[2] = FALSE;
+    abNote[0] = TRUE;
+    UserApp1_StateMachine = UserApp1SM_LightsShow;
+  }
+  else if (abNote[2])
+  {
+    u16Buzzer1Length++;
+  }
 }
 
 
 static void UserApp1SM_Loss(void)
 {
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR, "LOSER. Press Button0");
+  LCDMessage(LINE2_START_ADDR, "To Play Again");
+  static u32 u32Counter = 0;
+  static u16 u16Frequency = 1000;
+  
+  if (u32Counter == 1000)
+  {
+    PWMAudioOff(BUZZER1);
+    PWMAudioOff(BUZZER2);
+    UserApp1_StateMachine = UserApp1SM_LightsShow;
+  }
+  else if (u32Counter%10 == 0)
+  {
+    u16Frequency-=5;
+    PWMAudioSetFrequency(BUZZER1, u16Frequency);
+    PWMAudioSetFrequency(BUZZER1, u16Frequency);
+  }
+  else
+  {
+    u32Counter++;
+  } 
 }
 
 

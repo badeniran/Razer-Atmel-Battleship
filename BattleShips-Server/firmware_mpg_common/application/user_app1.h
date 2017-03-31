@@ -39,7 +39,22 @@ Constants / Definitions
 #define ANT_FREQUENCY_USERAPP           (u8)50                // 2400MHz + 0 - 99 MHz
 #define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_0DBM   // Max tx power
 
+/* Required constants for ANT channel configuration */
 
+#define SLEEP_TIME (u32) 5000                                                          // Time to sleep before retrying ant config
+#define INIT_CONNECT_TIMEOUT (u32) 30000                                               // Time to wait before initial connection timeout
+#define WAIT_TIME (u32) 10000                                                          // Time to wait for message from Player1
+
+
+/*Ant Data Information*/
+#define ANT_UNUSED_BYTE (u8) 0xff       
+#define ANT_MESSAGE_CONSTANT (u8) 0xcb
+#define ANT_CONSTANT_BYTE (u8) 0
+#define ANT_X_BYTE (u8) 1
+#define ANT_Y_BYTE (u8) 2
+#define ANT_HIT_OR_MISS_BYTE (u8) 3
+#define ANT_WIN_BYTE (u8) 4
+#define ANT_READY_BYTE (u8) 5 
 /**********************************************************************************************************************
 Function Declarations
 **********************************************************************************************************************/

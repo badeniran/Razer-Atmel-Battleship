@@ -68,7 +68,7 @@ void main(void)
   SdCardInitialize();
 
   /* Application initialization */
-  UserApp1Startup();
+  UserApp1Initialize();
   UserApp2Initialize();
   UserApp3Initialize();
   

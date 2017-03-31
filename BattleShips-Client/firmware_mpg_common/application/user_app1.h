@@ -28,7 +28,25 @@ Type Definitions
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
+/* Required constants for ANT channel configuration */
+#define ANT_CHANNEL_USERAPP             (u8)0                 
+#define ANT_SERIAL_LO_USERAPP           (u8)0xBA                 
+#define ANT_SERIAL_HI_USERAPP           (u8)0xCA                 
+#define ANT_DEVICE_TYPE_USERAPP         (u8)0                 
+#define ANT_TRANSMISSION_TYPE_USERAPP   (u8)0                 
+#define ANT_CHANNEL_PERIOD_LO_USERAPP   (u8)0x00              
+#define ANT_CHANNEL_PERIOD_HI_USERAPP   (u8)0x20              
+#define ANT_FREQUENCY_USERAPP           (u8)50                
+#define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_0DBM
 
+
+/*Constants for requesting G_au8AntApiCurrentData elements*/ 
+#define ANT_CONSTANT                    (u8)0
+#define ANT_XPOS                        (u8)1
+#define ANT_YPOS                        (u8)2
+#define ANT_HITORMISS                   (u8)3
+#define ANT_WIN                         (u8)4
+#define ANT_READYBYTE                   (u8)5
 
 /**********************************************************************************************************************
 Function Declarations
@@ -42,20 +60,30 @@ Function Declarations
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Protected functions                                                                                                */
 /*--------------------------------------------------------------------------------------------------------------------*/
-void UserApp1ANTInit(void);
-void UserApp1Startup(void);
+void UserApp1Initialize(void);
 void UserApp1RunActiveState(void);
 void UserApp1LightShow(void);
-
+void UserApp1ANTInit(void);
 /*--------------------------------------------------------------------------------------------------------------------*/
 /* Private functions                                                                                                  */
 /*--------------------------------------------------------------------------------------------------------------------*/
-
+void AcknowledgeButtons(void);
 
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
 static void UserApp1SM_Idle(void);    
+static void UserApp1SM_SetupShips(void);
+static void UserApp1SM_FailedInit(void);  
+static void UserApp1SM_CheckInitialConnection(void);
+static void UserApp1SM_ConnectionTimeout(void);
+static void UserApp1SM_WaitForMessage(void);
+static void UserApp1SM_GameState1(void);
+static void UserApp1SM_GameState2(void);
+static void UserApp1SM_HitOrMiss(void);
+static void UserApp1SM_Win(void);
+static void UserApp1SM_Loss(void);
+static void UserApp1SM_Ready(void);
 
 static void UserApp1SM_Error(void);         
 static void UserApp1SM_FailedInit(void);        

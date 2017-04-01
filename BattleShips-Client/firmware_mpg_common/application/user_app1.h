@@ -55,7 +55,8 @@ Constants / Definitions
 #define ANT_HIT_OR_MISS_BYTE (u8) 3
 #define ANT_WIN_BYTE (u8) 4
 #define ANT_READY_BYTE (u8) 5
-
+#define ANT_ACKNOWLEDGE_BYTE (u8) 6
+#define ANT_SENDING_BYTE (u8) 7
 /**********************************************************************************************************************
 Function Declarations
 **********************************************************************************************************************/
@@ -78,8 +79,11 @@ void AcknowledgeButtons(void);
 /***********************************************************************************************************************
 State Machine Declarations
 ***********************************************************************************************************************/
-static void UserApp1SM_LightsShow(void);    
-static void UserApp1SM_SetupShips(void);
+static void UserApp1SM_LightsShow(void);
+static void UserApp1SM_ViewOppSea(void);
+static void UserApp1SM_ViewMySea(void);
+static void UserApp1SM_SetupShips(void);    
+static void UserApp1SM_ANTInit(void); 
 static void UserApp1SM_FailedInit(void);  
 static void UserApp1SM_CheckInitialConnection(void);
 static void UserApp1SM_ConnectionTimeout(void);
@@ -89,10 +93,9 @@ static void UserApp1SM_GameState2(void);
 static void UserApp1SM_HitOrMiss(void);
 static void UserApp1SM_Win(void);
 static void UserApp1SM_Loss(void);
-static void UserApp1SM_Ready(void);
-
-static void UserApp1SM_Error(void);         
-static void UserApp1SM_FailedInit(void);        
+static void UserApp1SM_QueueMessage(void);
+      
+     
 
 
 #endif /* __USER_APP1_H */

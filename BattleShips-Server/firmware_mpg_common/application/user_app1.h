@@ -43,7 +43,7 @@ Constants / Definitions
 
 #define SLEEP_TIME (u16) 5000                                                          // Time to sleep before retrying ant config
 #define INIT_CONNECT_TIMEOUT (u16) 30000                                               // Time to wait before initial connection timeout
-#define WAIT_TIME (u16) 10000                                                          // Time to wait for message from Player1
+#define WAIT_TIME (u16) 15000                                                          // Time to wait for message from Player1
 
 
 /*Ant Data Information*/
@@ -56,6 +56,8 @@ Constants / Definitions
 #define ANT_HIT_OR_MISS_BYTE (u8) 3
 #define ANT_WIN_BYTE (u8) 4
 #define ANT_READY_BYTE (u8) 5 
+#define ANT_ACKNOWLEDGE_BYTE (u8) 6
+#define ANT_SENDING_BYTE (u8) 7
 /**********************************************************************************************************************
 Function Declarations
 **********************************************************************************************************************/
@@ -81,6 +83,8 @@ void AcknowledgeButtons(void);
 State Machine Declarations
 ***********************************************************************************************************************/
 static void UserApp1SM_LightsShow(void);
+static void UserApp1SM_ViewOppSea(void);
+static void UserApp1SM_ViewMySea(void);
 static void UserApp1SM_SetupShips(void);    
 static void UserApp1SM_ANTInit(void); 
 static void UserApp1SM_FailedInit(void);  
@@ -92,6 +96,7 @@ static void UserApp1SM_GameState2(void);
 static void UserApp1SM_HitOrMiss(void);
 static void UserApp1SM_Win(void);
 static void UserApp1SM_Loss(void);
+static void UserApp1SM_QueueMessage(void);
 
 
 

@@ -1295,12 +1295,6 @@ static void UserApp1SM_HitOrMiss(void)
 static void UserApp1SM_QueueMessage(void)
 {
   static u16 u16Counter = 0;
-  
-  if (u16Counter == 1000)
-  {
-  u16Counter = 0;
-  if(AntQueueBroadcastMessage(UserApp1_au8DataPackOut))
-  {
       if(AntReadData())
       {
         if (G_eAntApiCurrentMessageClass == ANT_DATA && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
@@ -1316,14 +1310,19 @@ static void UserApp1SM_QueueMessage(void)
             UserApp1_StateMachine = UserApp1_NextState;
           }
         }
+        else if (G_eAntApiCurrentMessageClass == ANT_TICK)
+        { 
+          if (u16Counter == 20)
+          {
+            u16Counter = 0;
+          AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+          }
+          else
+          {
+            u16Counter+=5;
+          }
+        }
       }
-  }
-  else
-  {
-    UserApp1_StateMachine = UserApp1SM_FailedInit;
-  }
-  }
-    u16Counter++;
 }
 
 static void UserApp1SM_Win(void)

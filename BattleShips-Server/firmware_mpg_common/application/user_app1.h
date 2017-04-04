@@ -97,7 +97,7 @@ static void UserApp1SM_HitOrMiss(void);
 static void UserApp1SM_Win(void);
 static void UserApp1SM_Loss(void);
 static void UserApp1SM_QueueMessage(void);
-
+static void UserApp1SM_Reset(void);
 
 
 

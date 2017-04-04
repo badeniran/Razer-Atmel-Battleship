@@ -12,7 +12,7 @@
           
           
           
-        <Column0>207</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
+        <Column0>120</Column0><Column1>27</Column1><Column2>27</Column2><Column3>27</Column3></ColumnWidths>
       </Workspace>
       <Build>
         
@@ -21,7 +21,7 @@
         
       <ColumnWidth0>20</ColumnWidth0><ColumnWidth1>723</ColumnWidth1><ColumnWidth2>193</ColumnWidth2><ColumnWidth3>48</ColumnWidth3></Build>
       <TerminalIO/>
-    </Static>
+    <Debug-Log><ColumnWidth0>26</ColumnWidth0><ColumnWidth1>1301</ColumnWidth1></Debug-Log></Static>
     <Windows>
       
       
@@ -45,7 +45,7 @@
             <Factory>Build</Factory>
             <Session/>
           </Tab>
-        </Tabs>
+        <Tab><Identity>TabID-29022-4115</Identity><TabName>Debug Log</TabName><Factory>Debug-Log</Factory><Session/></Tab></Tabs>
         
       <SelectedTab>0</SelectedTab></Wnd2></Windows>
     <Editor>
@@ -53,14 +53,14 @@
       
       
       
-    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\application\main.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>3443</SelStart2><SelEnd2>3443</SelEnd2></Tab><ActiveTab>0</ActiveTab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\firmware_mpg_common\application\user_app1.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>862</SelStart2><SelEnd2>862</SelEnd2></Tab></Pane><ActivePane>0</ActivePane><Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\firmware_mpg_common\application\user_app1.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>0</YPos2><SelStart2>1394</SelStart2><SelEnd2>1394</SelEnd2></Tab><ActiveTab>0</ActiveTab></Pane><Sizes><Pane><X>520987</X><Y>1000000</Y></Pane><Pane><X>479012</X><Y>1000000</Y></Pane></Sizes><SplitMode>4</SplitMode></Editor>
+    <Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\application\main.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>29</YPos2><SelStart2>2579</SelStart2><SelEnd2>2579</SelEnd2></Tab><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\firmware_mpg_common\application\user_app1.c</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>0</XPos2><YPos2>1001</YPos2><SelStart2>45603</SelStart2><SelEnd2>45603</SelEnd2></Tab><ActiveTab>1</ActiveTab></Pane><ActivePane>0</ActivePane><Pane><Tab><Factory>TextEditor</Factory><Filename>$WS_DIR$\..\..\firmware_mpg_common\application\user_app1.h</Filename><XPos>0</XPos><YPos>0</YPos><SelStart>0</SelStart><SelEnd>0</SelEnd><XPos2>203</XPos2><YPos2>0</YPos2><SelStart2>1218</SelStart2><SelEnd2>1218</SelEnd2></Tab><ActiveTab>0</ActiveTab></Pane><Sizes><Pane><X>520987</X><Y>1000000</Y></Pane><Pane><X>479012</X><Y>1000000</Y></Pane></Sizes><SplitMode>4</SplitMode></Editor>
     <Positions>
       
       
       
       
       
-    <Top><Row0><Sizes><Toolbar-010FC110><key>iaridepm.enu1</key></Toolbar-010FC110></Sizes></Row0></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>782</Bottom><Right>298</Right><x>-2</x><y>-2</y><xscreen>200</xscreen><yscreen>213</yscreen><sizeHorzCX>104167</sizeHorzCX><sizeHorzCY>205202</sizeHorzCY><sizeVertCX>156250</sizeVertCX><sizeVertCY>755299</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>211</Bottom><Right>1922</Right><x>-2</x><y>-2</y><xscreen>1924</xscreen><yscreen>213</yscreen><sizeHorzCX>1002083</sizeHorzCX><sizeHorzCY>205202</sizeHorzCY><sizeVertCX>104167</sizeVertCX><sizeVertCY>205202</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
+    <Top><Row0><Sizes><Toolbar-0326C168><key>iaridepm.enu1</key></Toolbar-0326C168></Sizes></Row0><Row1><Sizes/></Row1><Row2><Sizes><Toolbar-155575A0><key>debuggergui.enu1</key></Toolbar-155575A0></Sizes></Row2><Row3><Sizes><Toolbar-15557730><key>armjlink.enu1</key></Toolbar-15557730></Sizes></Row3></Top><Left><Row0><Sizes><Wnd0><Rect><Top>-2</Top><Left>-2</Left><Bottom>501</Bottom><Right>211</Right><x>-2</x><y>-2</y><xscreen>142</xscreen><yscreen>141</yscreen><sizeHorzCX>103953</sizeHorzCX><sizeHorzCY>205839</sizeHorzCY><sizeVertCX>155930</sizeVertCX><sizeVertCY>734307</sizeVertCY></Rect></Wnd0></Sizes></Row0></Left><Right><Row0><Sizes/></Row0></Right><Bottom><Row0><Sizes><Wnd2><Rect><Top>-2</Top><Left>-2</Left><Bottom>139</Bottom><Right>1368</Right><x>-2</x><y>-2</y><xscreen>1370</xscreen><yscreen>141</yscreen><sizeHorzCX>1002928</sizeHorzCX><sizeHorzCY>205839</sizeHorzCY><sizeVertCX>103953</sizeVertCX><sizeVertCY>205839</sizeVertCY></Rect></Wnd2></Sizes></Row0></Bottom><Float><Sizes/></Float></Positions>
   </Desktop>
 </Workspace>
 

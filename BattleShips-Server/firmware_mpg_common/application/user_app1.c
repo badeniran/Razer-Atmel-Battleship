@@ -1007,8 +1007,12 @@ static void UserApp1SM_CheckInitialConnection(void)
 {
   static u16 u16InitialConnectionCounter = 0;
   // Check for any incoming DATA messages
-  if (AntReadData() && G_eAntApiCurrentMessageClass == ANT_DATA)
+  if (AntReadData())
   {
+    
+    if (G_eAntApiCurrentMessageClass == ANT_DATA)
+    {
+      LedOn(BLUE);
     // check if it's ready byte is 1
       if (G_au8AntApiCurrentData[ANT_READY_BYTE] == 1 && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
       {
@@ -1031,6 +1035,7 @@ static void UserApp1SM_CheckInitialConnection(void)
         LCDMessage(LINE2_START_ADDR + 4, "Press RESET!");
         UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
       }
+    }
   }
   else
   {
@@ -1317,12 +1322,6 @@ static void UserApp1SM_HitOrMiss(void)
 static void UserApp1SM_QueueMessage(void)
 {
   static u16 u16Counter = 0;
-  
-  if (u16Counter == 1000)
-  {
-  u16Counter = 0;
-  if(AntQueueBroadcastMessage(UserApp1_au8DataPackOut))
-  {
       if(AntReadData())
       {
         if (G_eAntApiCurrentMessageClass == ANT_DATA && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
@@ -1338,14 +1337,19 @@ static void UserApp1SM_QueueMessage(void)
             UserApp1_StateMachine = UserApp1_NextState;
           }
         }
+        else if (G_eAntApiCurrentMessageClass == ANT_TICK)
+        { 
+          if (u16Counter == 20)
+          {
+            u16Counter = 0;
+          AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+          }
+          else
+          {
+            u16Counter+=5;
+          }
+        }
       }
-  }
-  else
-  {
-    UserApp1_StateMachine = UserApp1SM_FailedInit;
-  }
-  }
-    u16Counter++;
 }
 
 

@@ -1255,9 +1255,9 @@ static void UserApp1SM_HitOrMiss(void)
     
     if (u8Win == 1) // If there is a win
     {
-	 LCDCommand(LCD_CLEAR_CMD);
-	  LCDMessage(LINE1_START_ADDR, "WINNER! Press B0");
-	  LCDMessage(LINE2_START_ADDR, "To Play Again");
+    LCDCommand(LCD_CLEAR_CMD);
+	  LCDMessage(LINE1_START_ADDR + 2, "WINNER! Press B0");
+	  LCDMessage(LINE2_START_ADDR + 3, "To Play Again");
       // Set up buzzers to play winner tone
       PWMAudioSetFrequency(BUZZER1, 500);
       PWMAudioSetFrequency(BUZZER2, 500);
@@ -1309,9 +1309,9 @@ static void UserApp1SM_HitOrMiss(void)
     }
     if(UserApp1_MyPiecesHit == 9) // If all the pieces have been hit
     {
-	 LCDCommand(LCD_CLEAR_CMD);
-      LCDMessage(LINE1_START_ADDR, "LOSER. Press B0");
-      LCDMessage(LINE2_START_ADDR, "To Play Again");
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR + 2, "LOSER. Press B0");
+      LCDMessage(LINE2_START_ADDR + 3, "To Play Again");
       // Set the win byte to 1 and setup the buzzers to play the losing tune
       UserApp1_au8DataPackOut[ANT_WIN_BYTE] = 1; 
       PWMAudioSetFrequency(BUZZER1, 1000);
@@ -1428,6 +1428,7 @@ static void UserApp1SM_FailedInit(void)
         u16SleepCounter++;
       }
 } /* end UserApp1SM_FailedInit() */
+
 
 static void UserApp1SM_Reset(void)
 {

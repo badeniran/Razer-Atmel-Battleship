@@ -84,7 +84,6 @@ static u8 UserApp1_au8Ship[] = "#";                                             
 static u8 UserApp1_au8Miss[] = "O";                                                    // What will be displayed as a miss on the LCD
 static u8 UserApp1_au8Hit[] = "X";                                                      // What will be displayed as a hit on the LCD
 static bool UserApp1_bSettingUp = FALSE;
-
 /*********************************************************************************************************************
 Constants/Definitions
 **********************************************************************************************************************/
@@ -879,7 +878,7 @@ u8CruisersPlaced = 0;
                     u8DestroyerPiecesPlaced++;
                     u8DestroyersPlaced++;
                    u8BoatsPlaced = 0;
-     u8CruiserPiecesPlaced = 0;
+                   u8CruiserPiecesPlaced = 0;
      u8CruisersPlaced = 0;
    u8DestroyerPiecesPlaced = 0;
 u8DestroyersPlaced = 0;
@@ -904,21 +903,25 @@ u8DestroyersPlaced = 0;
 
 static void UserApp1SM_ViewOppSea(void)
 {
-  AntReadData();
+  //AntReadData();
   static u8 u8Rows = 0;
   static u8 u8Cols = 0;
+ // static u8 u8Ready = 0;
+  //static u16 u16Timer = 0;
   if (!UserApp1_bSettingUp)
   {
     LCDCommand(LCD_CLEAR_CMD);
     LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON | LCD_DISPLAY_CURSOR | LCD_DISPLAY_BLINK);
     u8Rows = 0;
     u8Cols = 0;
+    //u8Ready = 0;
     UserApp1_bSettingUp = TRUE;
   }
-  else
+  else //if (AntReadData())
   {
     if (u8Rows < 2)
     {
+      AntReadData();
       if (u8Rows)
       {
         if (UserApp1_au8OppSea[u8Rows][u8Cols] == 2)
@@ -949,34 +952,56 @@ static void UserApp1SM_ViewOppSea(void)
         u8Rows++;
       }
     }
+     else //if (u8Ready)
+    {
+       AcknowledgeButtons();
+      UserApp1_bSettingUp = FALSE;
+      
+      LCDCommand(LCD_ADDRESS_CMD | (UserApp1_CursorPositionX + UserApp1_CursorPositionY));
+      UserApp1_StateMachine = UserApp1SM_Break;
+      
+    }
+ 
+  }
+}
+
+
+
+static void UserApp1SM_Break(void)
+{
+  static u16 u16Timer;
+ if (u16Timer == 2000)
+    {
+      UserApp1_StateMachine = UserApp1SM_GameState1;
+      LedBlink(CYAN, LED_2HZ);
+      AcknowledgeButtons();
+      u16Timer = 0;
+    }
     else
     {
-      AcknowledgeButtons();
-      UserApp1_bSettingUp = FALSE;
-      LedBlink(CYAN, LED_0_5HZ);
-      LCDCommand(LCD_ADDRESS_CMD | (UserApp1_CursorPositionX + UserApp1_CursorPositionY));
-      UserApp1_StateMachine = UserApp1SM_GameState1;
+      u16Timer++;
     }
-  }
 }
 
 static void UserApp1SM_ViewMySea(void)
 {
-  AntReadData();
+  
    static u8 u8Rows = 0;
    static u8 u8Cols = 0;
    if (!UserApp1_bSettingUp)
   {
     LCDCommand(LCD_CLEAR_CMD);
+    LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
     u8Rows = 0;
     u8Cols = 0;
-    LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
+    
     UserApp1_bSettingUp = TRUE;
   }
-  else
+  else //if (AntReadData())
   {
     if (u8Rows < 2)
     {
+      AntReadData();
       if (u8Rows)
       {
         if (UserApp1_au8MySea[u8Rows][u8Cols] == 1)
@@ -1025,6 +1050,9 @@ static void UserApp1SM_ViewMySea(void)
   }
 }
 
+
+
+
 static void UserApp1SM_FailedInit(void)
 {
   AntReadData();
@@ -1055,16 +1083,15 @@ static void UserApp1SM_CheckInitialConnection(void)
     // check if it's ready byte is 1
       if (G_au8AntApiCurrentData[ANT_READY_BYTE] == 1 && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
       {
+
         // Player 1 is ready and the message is actually from player 1 so send acknowledgement
         UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 1;
-        if (AntQueueBroadcastMessage(UserApp1_au8DataPackOut))
-        {
-          u16InitialConnectionCounter = 0;
-            LedOff(YELLOW);
-            AcknowledgeButtons();
-            UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 0;
-            UserApp1_StateMachine = UserApp1SM_ViewOppSea;
-        }  
+        AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+        u16InitialConnectionCounter = 0;
+        LedOff(YELLOW);
+        AcknowledgeButtons();
+        UserApp1_NextState = UserApp1SM_ViewOppSea;
+        UserApp1_StateMachine = UserApp1SM_Pause;
       }
       else
       {
@@ -1097,6 +1124,29 @@ static void UserApp1SM_CheckInitialConnection(void)
   }
 }
 
+static void UserApp1SM_Pause(void)
+{
+  if (AntReadData()) 
+  {// If there is a DATA read and the message contains the Message Constant for this application
+    if (G_eAntApiCurrentMessageClass == ANT_DATA) 
+    {
+
+
+      if (G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT && 
+        !G_au8AntApiCurrentData[ANT_SENDING_BYTE])
+      {
+      UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 0;
+      AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+      if (UserApp1_NextState == UserApp1SM_HitOrMiss)
+      {
+        AcknowledgeButtons();
+      LedOff(YELLOW);
+      }
+      UserApp1_StateMachine = UserApp1_NextState; // Change state to determine whether or not it was a hit or miss
+      }
+      }
+    }
+}
 
 static void UserApp1SM_ConnectionTimeout(void)
 {
@@ -1109,15 +1159,19 @@ static void UserApp1SM_WaitForMessage(void)
     static u16 u16Timer = 0; // Timer to keep track of how long it has been waiting for a message 
   if (AntReadData()) 
   {// If there is a DATA read and the message contains the Message Constant for this application
-    if (G_eAntApiCurrentMessageClass == ANT_DATA && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT && 
-        G_au8AntApiCurrentData[ANT_SENDING_BYTE])
+    if (G_eAntApiCurrentMessageClass == ANT_DATA) 
     {
+
+
+      if (G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT && 
+        G_au8AntApiCurrentData[ANT_SENDING_BYTE])
+      {
       u16Timer = 0; 
-      LedOff(YELLOW);
-      LedBlink(BLUE, LED_2HZ);
       UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 1;
-      UserApp1_StateMachine = UserApp1SM_QueueMessage;
-      UserApp1_NextState = UserApp1SM_HitOrMiss; // Change state to determine whether or not it was a hit or miss
+      AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
+      UserApp1_NextState = UserApp1SM_HitOrMiss;
+      UserApp1_StateMachine = UserApp1SM_Pause; // Change state to determine whether or not it was a hit or miss
+      }
       }
     }
     else
@@ -1133,12 +1187,16 @@ static void UserApp1SM_WaitForMessage(void)
         UserApp1_StateMachine = UserApp1SM_ConnectionTimeout;
       }
      u16Timer++;
-    }
+
   }
+}
+
+
 
 
 static void UserApp1SM_GameState1(void)
 {
+   
   AntReadData();
   if (WasButtonPressed(BUTTON0))
     {
@@ -1195,8 +1253,8 @@ static void UserApp1SM_GameState1(void)
       {
         if(!UserApp1_au8OppSea[0][UserApp1_CursorPositionX])
         {
+
           LCDCommand(LCD_CLEAR_CMD);
-          LCDMessage(LINE1_START_ADDR, "Sending");
           LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
           UserApp1_au8OppSea[0][UserApp1_CursorPositionX] = 1;
           UserApp1_TargetX = UserApp1_CursorPositionX;
@@ -1205,9 +1263,10 @@ static void UserApp1SM_GameState1(void)
 	  UserApp1_au8DataPackOut[ANT_Y_BYTE] = UserApp1_TargetY; 
 	  UserApp1_LastGameState = UserApp1SM_GameState1;
           UserApp1_au8DataPackOut[ANT_SENDING_BYTE] = 1;
+          AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
 	  LedOff(CYAN);
 	  LedBlink(BLUE, LED_2HZ);
-          UserApp1_NextState = UserApp1SM_HitOrMiss;
+          UserApp1_NextState = UserApp1SM_WaitForMessage;
           UserApp1_StateMachine = UserApp1SM_QueueMessage;
           AcknowledgeButtons();
         }
@@ -1216,8 +1275,8 @@ static void UserApp1SM_GameState1(void)
       {
         if(!UserApp1_au8OppSea[1][UserApp1_CursorPositionX])
         {
+
           LCDCommand(LCD_CLEAR_CMD);
-          LCDMessage(LINE1_START_ADDR, "Sending");
           LCDCommand(LCD_DISPLAY_CMD | LCD_DISPLAY_ON);
           UserApp1_au8OppSea[1][UserApp1_CursorPositionX] = 1;
           UserApp1_TargetX = UserApp1_CursorPositionX;
@@ -1225,10 +1284,11 @@ static void UserApp1SM_GameState1(void)
 	  UserApp1_au8DataPackOut[ANT_X_BYTE] = UserApp1_TargetX;
 	  UserApp1_au8DataPackOut[ANT_Y_BYTE] = UserApp1_TargetY; 
           UserApp1_au8DataPackOut[ANT_SENDING_BYTE] = 1;
+          AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
 	  UserApp1_LastGameState = UserApp1SM_GameState1;
 	  LedOff(CYAN);
 	  LedBlink(BLUE, LED_2HZ);
-          UserApp1_NextState = UserApp1SM_HitOrMiss;
+          UserApp1_NextState = UserApp1SM_WaitForMessage;
           UserApp1_StateMachine = UserApp1SM_QueueMessage;
           AcknowledgeButtons();
         }
@@ -1237,16 +1297,20 @@ static void UserApp1SM_GameState1(void)
 }
 
 
+
 static void UserApp1SM_GameState2(void)
 {
+   
   AntReadData();
   static u16 u16Timer = 0;
   if (u16Timer == 3000)
   {
+
     u16Timer = 0;
     UserApp1_LastGameState = UserApp1SM_GameState2;
     LedOff(CYAN);
     LedBlink(YELLOW, LED_2HZ);
+    AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
     UserApp1_StateMachine = UserApp1SM_WaitForMessage;
     AcknowledgeButtons();
   }
@@ -1256,12 +1320,14 @@ static void UserApp1SM_GameState2(void)
 
 static void UserApp1SM_HitOrMiss(void)
 {
+   
   if (UserApp1_LastGameState == UserApp1SM_GameState1) // If the last game state was gamestate1
   {
+
     // Copy hit/miss and win bytes
     u8 u8Hit = G_au8AntApiCurrentData[ANT_HIT_OR_MISS_BYTE];
     u8 u8Win = G_au8AntApiCurrentData[ANT_WIN_BYTE];
-    if (u8Hit) // If there is a hit
+    if (u8Hit == 1) // If there is a hit
     {
       if (UserApp1_TargetY == LINE1_START_ADDR)
       {
@@ -1300,11 +1366,14 @@ static void UserApp1SM_HitOrMiss(void)
     else
     {
       AcknowledgeButtons();
+      UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 0;
+    AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
       UserApp1_StateMachine = UserApp1SM_ViewMySea;
     }
   }
   else // Lastgame state was gamestate 2
   {
+
     // Copy the target coordinate that the opponent chose 
     UserApp1_TargetY = G_au8AntApiCurrentData[ANT_Y_BYTE];
     UserApp1_TargetX = G_au8AntApiCurrentData[ANT_X_BYTE];
@@ -1356,7 +1425,7 @@ static void UserApp1SM_HitOrMiss(void)
       UserApp1_NextState = UserApp1SM_ViewOppSea;
     }
     UserApp1_au8DataPackOut[ANT_SENDING_BYTE] = 1;
-    UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 1;
+    AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
     AcknowledgeButtons();
     LedBlink(BLUE, LED_2HZ);
     UserApp1_StateMachine = UserApp1SM_QueueMessage;
@@ -1367,32 +1436,20 @@ static void UserApp1SM_HitOrMiss(void)
 
 static void UserApp1SM_QueueMessage(void)
 {
-  static u16 u16Counter = 0;
+   
       if(AntReadData())
       {
-        if (G_eAntApiCurrentMessageClass == ANT_DATA && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
+        if (G_eAntApiCurrentMessageClass == ANT_DATA)
         {
-          if(G_au8AntApiCurrentData[ANT_ACKNOWLEDGE_BYTE])
+          if(G_au8AntApiCurrentData[ANT_ACKNOWLEDGE_BYTE] && G_au8AntApiCurrentData[ANT_CONSTANT_BYTE] == ANT_MESSAGE_CONSTANT)
           {
-            u16Counter = 0;
+
             AcknowledgeButtons();
             LedOff(BLUE);
             UserApp1_au8DataPackOut[ANT_SENDING_BYTE] = 0;
             UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 0;
             AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
             UserApp1_StateMachine = UserApp1_NextState;
-          }
-        }
-        else if (G_eAntApiCurrentMessageClass == ANT_TICK)
-        { 
-          if (u16Counter == 20)
-          {
-            u16Counter = 0;
-          AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
-          }
-          else
-          {
-            u16Counter+=5;
           }
         }
       }
@@ -1447,7 +1504,11 @@ static void UserApp1SM_Loss(void)
 static void UserApp1SM_Reset(void)
 {
   AntReadData();
-  
+   
+   UserApp1_au8DataPackOut[ANT_ACKNOWLEDGE_BYTE] = 0;
+   UserApp1_au8DataPackOut[ANT_SENDING_BYTE] = 0;
+   UserApp1_au8DataPackOut[ANT_WIN_BYTE] = 0;
+   AntQueueBroadcastMessage(UserApp1_au8DataPackOut);
    static u8 u8Rows = 0;
    static u8 u8Cols = 0;
     if (u8Rows < 2)

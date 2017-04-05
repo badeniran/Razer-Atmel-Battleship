@@ -43,7 +43,7 @@ Constants / Definitions
 
 #define SLEEP_TIME (u16) 5000                                                          // Time to sleep before retrying ant config
 #define INIT_CONNECT_TIMEOUT (u16) 30000                                               // Time to wait before initial connection timeout
-#define WAIT_TIME (u16) 15000                                                          // Time to wait for message from Player1
+#define WAIT_TIME (u16) 20000                                                          // Time to wait for message from Player1
 
 
 /*Ant Data Information*/
@@ -98,8 +98,8 @@ static void UserApp1SM_Win(void);
 static void UserApp1SM_Loss(void);
 static void UserApp1SM_QueueMessage(void);
 static void UserApp1SM_Reset(void);
-
-
+static void UserApp1SM_Pause(void);
+static void UserApp1SM_Break(void);
 
 #endif /* __USER_APP1_H */
 
